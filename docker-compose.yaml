@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  back-end-service:
+    image: <your-fastapi-image>
+    ports:
+      - "8000:8000"
+
+  back-end-user:
+    image: <your-flask-image>
+    ports:
+      - "5000:5000"
+
+  front-end-service:
+    image: <your-html-css-image>
+    ports:
+      - "80:80"
+
+  front-end-user:
+    image: <your-react-image>
+    ports:
+      - "3000:3000"
+
+  monitoring:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - "5050:5050"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=user@domain.com
+      - PGADMIN_DEFAULT_PASSWORD=SuperSecret
+
+  postgres-back-up:
+    image: postgres:latest
+    volumes:
+      - ./postgres-back-up-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+
+  postgres-main:
+    image: postgres:latest
+    volumes:
+      - ./postgres-main-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
