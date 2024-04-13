@@ -1,16 +1,14 @@
-# Используем базовый образ Python
 FROM python:3.12-alpine
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Установка зависимостей
-RUN pip install fastapi uvicorn
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем код в контейнер
 COPY . .
 
-# Открываем порт 80 для веб-сервера
-EXPOSE 80
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
-# Запускаем сервер с помощью uvicorn приложения из main.py
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]

@@ -4,7 +4,7 @@ FROM python:3.12-alpine
 WORKDIR /app
 
 # Установка зависимостей
-RUN pip install flask
+RUN pip install flask psycopg2-binary
 
 # Копируем код в контейнер
 COPY . .

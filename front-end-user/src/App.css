@@ -36,3 +36,35 @@
     transform: rotate(360deg);
   }
 }
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2; /* Повыше, чтобы быть над другими элементами */
+  background: white;
+  padding: 20px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  display: none; /* Изначально скрыто */
+}
+
+.modal.active {
+  display: block; /* Показывать, когда активно */
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1; /* Ниже модального окна, но выше остального контента */
+  display: none; /* Изначально скрыто */
+}
+
+.overlay.active {
+  display: block; /* Показывать, когда активно */
+}
