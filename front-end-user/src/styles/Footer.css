@@ -1,0 +1,57 @@
+/* src/styles/Footer.css */
+.footer {
+    background-color: #333;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+  }
+  
+  .footer-navigation {
+    display: flex;
+  }
+  
+  .footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0 20px;
+  }
+  
+  .footer-links li a {
+    color: white;
+    text-decoration: none;
+    display: block;
+    margin-bottom: 5px;
+  }
+  
+  .footer-links li a:hover {
+    text-decoration: underline;
+  }
+  
+  .footer-contacts {
+    text-align: right;
+  }
+  
+  .footer-phone, .footer-email {
+    margin-bottom: 10px;
+  }
+  
+  .footer-social {
+    /* Стили для иконок социальных сетей */
+  }
+  
+  @media (max-width: 768px) {
+    .footer {
+      flex-direction: column;
+    }
+  
+    .footer-navigation {
+      margin-bottom: 20px;
+    }
+  
+    .footer-contacts {
+      text-align: center;
+    }
+  }
+  

@@ -1,0 +1,45 @@
+/* src/styles/AboutUs.css */
+.about-us {
+    color: #fff;
+    background-color: #000;
+    padding: 2rem;
+    font-family: 'Arial', sans-serif;
+  }
+  
+  .about-section {
+    margin-bottom: 2rem;
+  }
+  
+  .about-section h1 {
+    text-align: center;
+    margin-bottom: 1rem;
+  }
+  
+  .features {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .feature {
+    background: #333;
+    padding: 1rem;
+    border-radius: 8px;
+  }
+  
+  .feature h2 {
+    color: #fff;
+    font-size: 1.4rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .feature p {
+    font-size: 1rem;
+  }
+  
+  @media (max-width: 768px) {
+    .features {
+      grid-template-columns: 1fr;
+    }
+  }
+  

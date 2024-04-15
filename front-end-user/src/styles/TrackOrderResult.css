@@ -1,0 +1,18 @@
+/* src/styles/TrackOrderResult.css */
+.track-order-result {
+    padding: 20px;
+    background-color: #2c2c2c;
+    color: #fff;
+    border-radius: 8px;
+    text-align: center;
+    margin-top: 20px;
+  }
+  
+  .order-status p {
+    font-size: 1.2rem;
+  }
+  
+  .order-status strong {
+    color: #4CAF50; /* или любой другой цвет в зависимости от статуса */
+  }
+  

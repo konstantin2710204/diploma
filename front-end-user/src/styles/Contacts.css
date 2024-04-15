@@ -1,0 +1,47 @@
+/* src/styles/Contacts.css */
+.contacts {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    color: #fff;
+    background-color: #000;
+    padding: 2rem;
+    font-family: 'Arial', sans-serif;
+  }
+  
+  .contact-info {
+    max-width: 50%;
+  }
+  
+  .contact-info h1 {
+    margin-bottom: 1rem;
+  }
+  
+  .contact-details p, .social-links a {
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  
+  .social-links a {
+    text-decoration: none;
+    color: #fff;
+    /* Добавьте стили для иконок социальных сетей здесь, если используете иконки */
+  }
+  
+  .map img {
+    width: 50%;
+    border-radius: 8px;
+    /* Может потребоваться настройка стилей, в зависимости от ваших нужд */
+  }
+  
+  @media (max-width: 768px) {
+    .contacts {
+      flex-direction: column;
+    }
+  
+    .map img {
+      width: 100%;
+      margin-top: 1rem;
+    }
+  }
+  

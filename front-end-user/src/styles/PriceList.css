@@ -1,0 +1,63 @@
+/* src/styles/PriceList.css */
+.price-list {
+    color: #fff;
+    background-color: #1c1c1c;
+    padding: 2rem;
+    font-family: 'Arial', sans-serif;
+  }
+  
+  .price-list-header {
+    margin-bottom: 2rem;
+  }
+  
+  .price-list-header h1 {
+    text-align: center;
+  }
+  
+  .price-list-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+  }
+  
+  .service-category {
+    background: #333;
+    border-radius: 8px;
+    padding: 1rem;
+  }
+  
+  .service-category h2 {
+    background-color: #444;
+    color: #fff;
+    padding: 0.5rem;
+    border-radius: 8px;
+    text-align: center;
+  }
+  
+  .service-group {
+    margin-top: 1rem;
+  }
+  
+  .service-group h3 {
+    font-size: 1.2rem;
+    color: #f00; /* Вы можете настроить цвет */
+  }
+  
+  .service-group ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .service-group ul li {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #555;
+  }
+  
+  @media (max-width: 768px) {
+    .price-list-content {
+      grid-template-columns: 1fr;
+    }
+  }
+  
