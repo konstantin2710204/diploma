@@ -31,7 +31,9 @@ body, html {
   }
   
   .hero-section {
+    /*
     background-image: url('/path-to-your-hero-background.jpg');
+    */
     background-size: cover;
     background-position: center;
     padding: 2rem;

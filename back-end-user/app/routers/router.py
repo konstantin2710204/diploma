@@ -1,31 +1,51 @@
-from fastapi import APIRouter, Depends, HTTPException
+# app/routers/router.py
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from ..schemas import DeviceCreate, OrderCreate, ArchivedOrderCreate
-from ..models import Device, Order, ArchivedOrder
-from ..dependencies import get_db
+from typing import List
+from ..dependencies.database import get_db
+from ..models import Employee, Client, Device, Order, ArchivedOrder, ComputerBuild, ArchivedComputerBuild
+from ..schemas import EmployeeSchema, ClientSchema, DeviceSchema, OrderSchema, ArchivedOrderSchema, ComputerBuildSchema, ArchivedComputerBuildSchema
 
 router = APIRouter()
 
-@router.post("/devices/", response_model=Device)
-def create_device(device: DeviceCreate, db: Session = Depends(get_db)):
-    db_device = Device(**device.dict())
-    db.add(db_device)
-    db.commit()
-    db.refresh(db_device)
-    return db_device
+# Employees
+@router.get("/employees/", response_model=List[EmployeeSchema])
+def read_employees(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    employees = db.query(Employee).offset(skip).limit(limit).all()
+    return employees
 
-@router.post("/orders/", response_model=Order)
-def create_order(order: OrderCreate, db: Session = Depends(get_db)):
-    db_order = Order(**order.dict())
-    db.add(db_order)
-    db.commit()
-    db.refresh(db_order)
-    return db_order
+# Clients
+@router.get("/clients/", response_model=List[ClientSchema])
+def read_clients(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    clients = db.query(Client).offset(skip).limit(limit).all()
+    return clients
 
-@router.post("/archived_orders/", response_model=ArchivedOrder)
-def create_archived_order(archived_order: ArchivedOrderCreate, db: Session = Depends(get_db)):
-    db_archived_order = ArchivedOrder(**archived_order.dict())
-    db.add(db_archived_order)
-    db.commit()
-    db.refresh(db_archived_order)
-    return db_archived_order
+# Devices
+@router.get("/devices/", response_model=List[DeviceSchema])
+def read_devices(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    devices = db.query(Device).offset(skip).limit(limit).all()
+    return devices
+
+# Orders
+@router.get("/orders/", response_model=List[OrderSchema])
+def read_orders(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    orders = db.query(Order).offset(skip).limit(limit).all()
+    return orders
+
+# Archived Orders
+@router.get("/archived_orders/", response_model=List[ArchivedOrderSchema])
+def read_archived_orders(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    archived_orders = db.query(ArchivedOrder).offset(skip).limit(limit).all()
+    return archived_orders
+
+# Computer Builds
+@router.get("/computer_builds/", response_model=List[ComputerBuildSchema])
+def read_computer_builds(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    computer_builds = db.query(ComputerBuild).offset(skip).limit(limit).all()
+    return computer_builds
+
+# Archived Computer Builds
+@router.get("/archived_computer_builds/", response_model=List[ArchivedComputerBuildSchema])
+def read_archived_computer_builds(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    archived_computer_builds = db.query(ArchivedComputerBuild).offset(skip).limit(limit).all()
+    return archived_computer_builds

@@ -1,50 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Home from './components/Home';
 import PriceList from './components/PriceList';
 import OrderTracking from './components/OrderTracking';
 import Reviews from './components/Reviews';
-import AboutUs from './components/AboutUs';
-import Contact from './components/Contact';
-import RepairForm from './components/RepairForm';
-import ContactForm from './components/ContactForm';
+import Contacts from './components/Contacts';
 
 function App() {
-  const [showRepairForm, setShowRepairForm] = useState(false);
-  const [showContactForm, setShowContactForm] = useState(false);
-  const [message, setMessage] = useState('');
-
-  useEffect(() => {
-    fetch('/health')
-      .then(response => response.json())
-      .then(data => setMessage(data.status))
-      .catch(error => console.error('Error fetching data: ', error));
-  }, []);
-
   return (
-    <div className="App">
-      <header className="App-header">
-        <p>
-          API Status: {message}
-        </p>
-      </header>
+    <Router>
       <nav>
-        {/* Место для компонента навигации, если он будет добавлен */}
+        <Link to="/">Home</Link>
+        <Link to="/price-list">Price List</Link>
+        <Link to="/order-tracking">Order Tracking</Link>
+        <Link to="/reviews">Reviews</Link>
+        <Link to="/contacts">Contacts</Link>
       </nav>
-
-      <Home />
-      <PriceList />
-      <OrderTracking />
-      <Reviews />
-      <AboutUs />
-      <Contact />
-
-      <button onClick={() => setShowRepairForm(true)}>Отправить на ремонт</button>
-      <button onClick={() => setShowContactForm(true)}>Связаться с нами</button>
-
-      {showRepairForm && <RepairForm closeForm={() => setShowRepairForm(false)} />}
-      {showContactForm && <ContactForm closeForm={() => setShowContactForm(false)} />}
-
-    </div>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/price-list" element={<PriceList />} />
+        <Route path="/order-tracking" element={<OrderTracking />} />
+        <Route path="/reviews" element={<Reviews />} />
+        <Route path="/contacts" element={<Contacts />} />
+      </Routes>
+    </Router>
   );
 }
 
