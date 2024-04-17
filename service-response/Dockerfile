@@ -3,14 +3,14 @@ FROM python:3.12-alpine
 
 WORKDIR /app
 
-# Установка зависимостей
-RUN pip install flask psycopg2-binary
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем код в контейнер
 COPY . .
 
-# Открываем порт 80 для веб-сервера
+ENV FLASK_APP=run.py
+ENV FLASK_RUN_HOST=0.0.0.0
+
 EXPOSE 5000
 
-# Запускаем сервер с помощью uvicorn приложения из main.py
-CMD ["python", "main.py"]
+CMD ["python", "-m", "flask", "run", "--host=0.0.0.0"]

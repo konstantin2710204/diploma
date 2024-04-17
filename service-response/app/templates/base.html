@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Repair Shop</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css')}}">
+</head>
+<body>
+    <header>
+        <h1>Repair Shop</h1>
+        <nav>
+            <ul>
+                <li><a href="{{ url_for('views.view_orders') }}">Orders</a></li>
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('views.logout') }}">Logout</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('views.login') }}">Login</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+    <footer>
+        <p>© 2024 Repair Shop. All rights reserved.</p>
+    </footer>
+    <script src="{{ url_for('static', filename='js/script.js')}}"></script>
+</body>
+</html>
