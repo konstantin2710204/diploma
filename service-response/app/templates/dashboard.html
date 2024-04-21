@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="mt-4 mb-4">
+    <h1>Панель администратора</h1>
+    <p>Хаб для управления заказами, сборками, архивом</p>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary mb-3" style="max-width: 18rem;">
+            <div class="card-header">Заказы</div>
+            <div class="card-body">
+                <h5 class="card-title">Управление заказами</h5>
+                <p class="card-text">Просмотр заказа, изменение его статуса</p>
+                <a href="{{ url_for('main.orders') }}" class="btn btn-light">Посмотреть заказы</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success mb-3" style="max-width: 18rem;">
+            <div class="card-header">Сборки</div>
+            <div class="card-body">
+                <h5 class="card-title">Сборки компьютеров</h5>
+                <p class="card-text">Управление сборками</p>
+                <a href="{{ url_for('main.builds') }}" class="btn btn-light">Посмотреть сборки</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-info mb-3" style="max-width: 18rem;">
+            <div class="card-header">Архив</div>
+            <div class="card-body">
+                <h5 class="card-title">Архив заказов и сборок</h5>
+                <p class="card-text">Доступ к архиву заказов</p>
+                <a href="{{ url_for('main.archive') }}" class="btn btn-light">Посмотреть архив</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

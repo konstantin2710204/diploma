@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Orders{% endblock %}
+
+{% block content %}
+<div class="mt-4 mb-4">
+    <h1>Список заказов</h1>
+    <p>Здесь вы можете управлять заказами.</p>
+</div>
+
+<table class="table table-hover">
+    <thead class="thead-dark">
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Имя клиента</th>
+            <th scope="col">Тип устройства</th>
+            <th scope="col">Модель</th>
+            <th scope="col">Статус заказа</th>
+            <th scope="col"></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for order in orders %}
+        <tr>
+            <th scope="row">{{ loop.index }}</th>
+            <td>{{ order.client.name | safe }}</td>
+            <td>{{ order.device.type }}</td>
+            <td>{{ order.device.model }}</td>
+            <td>{{ order.status }}</td>
+            <td>{{ order.engineer.name }}</td>
+            <td>
+                <a href="{{ url_for('main.update_order_status', order_id=order.order_id) }}" class="btn btn-sm btn-primary">Изменить статус</a>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="7">No orders found.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

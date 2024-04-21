@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Computer Builds{% endblock %}
+
+{% block content %}
+<div class="mt-4 mb-4">
+    <h1>Список сборок</h1>
+    <p>Список текущих сборок</p>
+</div>
+
+<table class="table table-hover">
+    <thead class="thead-dark">
+        <tr>
+            <th scope="col">#</th>
+            <th scope="col">Имя клиента</th>
+            <th scope="col">Комплектующие</th>
+            <th scope="col">Статус</th>
+            <th scope="col">Назначенный мастер</th>
+            <th scope="col">Дата создания заказа</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for build in builds %}
+        <tr>
+            <th scope="row">{{ loop.index }}</th>
+            <td>{{ build.client.name | safe }}</td>
+            <td>{{ build.components | safe }}</td>
+            <td>{{ build.status }}</td>
+            <td>{{ build.engineer.name }}</td>
+            <td>{{ build.creation_date }}</td>
+            <td>
+                <a href="{{ url_for('main.update_build_status', build_id=build.build_id) }}" class="btn btn-sm btn-primary">Изменить статус</a>
+            </td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="7">Сборок не найдено.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

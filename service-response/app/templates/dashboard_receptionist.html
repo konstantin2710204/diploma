@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Панель приемщика{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Панель приемщика</h1>
+    <p>Добро пожаловать, {{ user.name }}! Вы можете управлять заказами и сборками ниже:</p>
+
+    <h2>All Repair Orders</h2>
+    <table class="table">
+        <thead class="thead-dark">
+            <tr>
+                <th>#</th>
+                <th>Тип устройства</th>
+                <th>Модель</th>
+                <th>Имя клиента</th>
+                <th>Номер телефона клиента</th>
+                <th>Статус</th>
+                <th>Назначенный мастер</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.order_id }}</td>
+                <td>{{ order.device.type }}</td>
+                <td>{{ order.device.model }}</td>
+                <td>{{ order.client.name }}</td>
+                <td>{{ order.client.phone }}</td>
+                <td>{{ order.status }}</td>
+                <td>{{ order.engineer.name }}</td>
+                <td>
+                    <a href="{{ url_for('main.update_order_status', order_id=order.order_id) }}" class="btn btn-sm btn-primary">Изменить статус</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="8">Заказов на ремонт не найдено.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>All Computer Builds</h2>
+    <table class="table">
+        <thead class="thead-dark">
+            <tr>
+                <th>#</th>
+                <th>Имя клиента</th>
+                <th>Номер телефона клиента</th>
+                <th>Статус заказа</th>
+                <th>Назначенный инженер</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for build in builds %}
+            <tr>
+                <td>{{ build.build_id }}</td>
+                <td>{{ build.client.name }}</td>
+                <td>{{ build.client.phone }}</td>
+                <td>{{ build.status }}</td>
+                <td>{{ build.engineer.name }}</td>
+                <td>
+                    <a href="{{ url_for('main.update_build_status', build_id=build.build_id) }}" class="btn btn-sm btn-primary">Изменить статус</a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6">Сборок не найдено.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h3>Новый заказ на ремонт</h3>
+            <form method="post" action="{{ url_for('main.create_order') }}">
+                <input type="text" name="client_name" placeholder="Client Name" required>
+                <input type="text" name="client_phone" placeholder="Client Phone" required>
+                <input type="text" name="type" placeholder="Device Type" required>
+                <input type="text" name="model" placeholder="Model" required>
+                <input type="text" name="serial_number" placeholder="Serial Number" required>
+                <button type="submit" class="btn btn-success">Создать заказ</button>
+            </form>
+        </div>
+        <div class="col-md-6">
+            <h3>Новый заказ на сборку</h3>
+            <form method="post" action="{{ url_for('main.create_build') }}">
+                <input type="text" name="client_name" placeholder="Client Name" required>
+                <input type="text" name="client_phone" placeholder="Client Phone" required>
+                <input type="text" name="budget" placeholder="Budget" required>
+                <textarea name="preferences" placeholder="Build Preferences"></textarea>
+                <button type="submit" class="btn btn-success">Создать заказ</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

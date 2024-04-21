@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Редактирование сборки{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Редактирование сборки</h2>
+    <form method="post">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.status.label(class="form-control-label") }}
+            {{ form.status(class="form-control") }}
+            {% if form.status.errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.status.errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary">Изменить статус сборки</button>
+            <a href="{{ url_for('main.builds') }}" class="btn btn-secondary">Назад</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

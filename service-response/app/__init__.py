@@ -1,22 +1,26 @@
+# app/__init__.py
+import os
 from flask import Flask
-from .extensions import db, login_manager
-from .config import Config
-from .views import views
-from .models import configure_login_manager
+from config import get_config
+from flask_bcrypt import Bcrypt
+from flask_sqlalchemy import SQLAlchemy
+from dotenv import load_dotenv
 
-def create_app():
+db = SQLAlchemy()
+bcrypt = Bcrypt()
+load_dotenv()
+
+def create_app(config_name='DevConfig'):
     app = Flask(__name__)
-    app.config.from_object(Config)
+    app.config.from_object(f'config.{config_name}')  # Предполагается, что конфигурация находится в файле config.py
+    app.config['ENCRYPTION_KEY'] = os.getenv('ENCRYPTION_KEY')
+    
+    db.init_app(app)  # Инициализация SQLAlchemy с приложением Flask
+    bcrypt.init_app(app)
 
-    db.init_app(app)
-    login_manager.init_app(app)
-    login_manager.login_view = 'views.login'
+    app.bcrypt = bcrypt
 
-    app.register_blueprint(views)
-
-    with app.app_context():
-        db.create_all()  # Создать таблицы базы данных
-
-    configure_login_manager(login_manager)
+    from .routers import main as main_blueprint
+    app.register_blueprint(main_blueprint)
 
     return app
