@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Orders{% endblock %}
+{% block title %}Список заказов{% endblock %}
 
 {% block content %}
 <div class="mt-4 mb-4">
-    <h1>Список заказов</h1>
-    <p>Здесь вы можете управлять заказами.</p>
+    <h1>Список заказов на ремонт</h1>
+    <p>Здесь вы можете управлять заказами на ремонт.</p>
 </div>
 
 <table class="table table-hover">
@@ -13,6 +13,7 @@
         <tr>
             <th scope="col">#</th>
             <th scope="col">Имя клиента</th>
+            <th scope="col">Номер телефона клиента</th>
             <th scope="col">Тип устройства</th>
             <th scope="col">Модель</th>
             <th scope="col">Статус заказа</th>
@@ -24,6 +25,7 @@
         <tr>
             <th scope="row">{{ loop.index }}</th>
             <td>{{ order.client.name | safe }}</td>
+            <td>{{ order.client.contact_info | safe }}</td>
             <td>{{ order.device.type }}</td>
             <td>{{ order.device.model }}</td>
             <td>{{ order.status }}</td>
@@ -34,7 +36,7 @@
         </tr>
         {% else %}
         <tr>
-            <td colspan="7">No orders found.</td>
+            <td colspan="7">Заказов на ремонт не найдено.</td>
         </tr>
         {% endfor %}
     </tbody>

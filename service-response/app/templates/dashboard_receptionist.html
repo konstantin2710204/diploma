@@ -7,7 +7,39 @@
     <h1>Панель приемщика</h1>
     <p>Добро пожаловать, {{ user.name }}! Вы можете управлять заказами и сборками ниже:</p>
 
-    <h2>All Repair Orders</h2>
+    <!-- Кнопка для открытия модального окна создания нового заказа на ремонт -->
+    <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#createOrderModal">
+        Создать новый заказ на ремонт
+    </button>
+
+    <!-- Модальное окно для создания нового заказа на ремонт -->
+    <div class="modal fade" id="createOrderModal" tabindex="-1" role="dialog" aria-labelledby="createOrderModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="createOrderModalLabel">Новый заказ на ремонт</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form method="post" action="{{ url_for('main.create_order') }}">
+              <input type="text" name="client_name" placeholder="Имя клиента" required class="form-control mb-2">
+              <input type="text" name="client_phone" placeholder="Телефон клиента" required class="form-control mb-2">
+              <input type="text" name="type" placeholder="Тип устройства" required class="form-control mb-2">
+              <input type="text" name="model" placeholder="Модель" required class="form-control mb-2">
+              <input type="text" name="serial_number" placeholder="Серийный номер" required class="form-control mb-2">
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                <button type="submit" class="btn btn-success">Создать заказ</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Все заказы на ремонт</h2>
     <table class="table">
         <thead class="thead-dark">
             <tr>
@@ -28,7 +60,7 @@
                 <td>{{ order.device.type }}</td>
                 <td>{{ order.device.model }}</td>
                 <td>{{ order.client.name }}</td>
-                <td>{{ order.client.phone }}</td>
+                <td>{{ order.client.contact_info }}</td>
                 <td>{{ order.status }}</td>
                 <td>{{ order.engineer.name }}</td>
                 <td>
@@ -43,13 +75,14 @@
         </tbody>
     </table>
 
-    <h2>All Computer Builds</h2>
+    <h2>Все заказы на сборку компьютера</h2>
     <table class="table">
         <thead class="thead-dark">
             <tr>
                 <th>#</th>
                 <th>Имя клиента</th>
                 <th>Номер телефона клиента</th>
+                <th>Комплектующие</th>
                 <th>Статус заказа</th>
                 <th>Назначенный инженер</th>
                 <th></th>
@@ -59,8 +92,9 @@
             {% for build in builds %}
             <tr>
                 <td>{{ build.build_id }}</td>
-                <td>{{ build.client.name }}</td>
-                <td>{{ build.client.phone }}</td>
+                <td>{{ build.client.name | safe}}</td>
+                <td>{{ build.client.contact_info | safe }}</td>
+                <td>{{ build.components | safe}}</td>
                 <td>{{ build.status }}</td>
                 <td>{{ build.engineer.name }}</td>
                 <td>
@@ -75,28 +109,6 @@
         </tbody>
     </table>
 
-    <div class="row">
-        <div class="col-md-6">
-            <h3>Новый заказ на ремонт</h3>
-            <form method="post" action="{{ url_for('main.create_order') }}">
-                <input type="text" name="client_name" placeholder="Client Name" required>
-                <input type="text" name="client_phone" placeholder="Client Phone" required>
-                <input type="text" name="type" placeholder="Device Type" required>
-                <input type="text" name="model" placeholder="Model" required>
-                <input type="text" name="serial_number" placeholder="Serial Number" required>
-                <button type="submit" class="btn btn-success">Создать заказ</button>
-            </form>
-        </div>
-        <div class="col-md-6">
-            <h3>Новый заказ на сборку</h3>
-            <form method="post" action="{{ url_for('main.create_build') }}">
-                <input type="text" name="client_name" placeholder="Client Name" required>
-                <input type="text" name="client_phone" placeholder="Client Phone" required>
-                <input type="text" name="budget" placeholder="Budget" required>
-                <textarea name="preferences" placeholder="Build Preferences"></textarea>
-                <button type="submit" class="btn btn-success">Создать заказ</button>
-            </form>
-        </div>
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </div>
 {% endblock %}

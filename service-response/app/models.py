@@ -43,25 +43,32 @@ class Client(db.Model):
     __tablename__ = 'clients'
     __table_args__ = {'schema': 'repair_shop'}
     client_id = db.Column(db.Integer, primary_key=True)
-    _name = db.Column('name', db.LargeBinary, nullable=False)  # Assuming encrypted storage
-    _contact_info = db.Column('contact_info',db.LargeBinary, nullable=False)  # Assuming encrypted storage
+    _name = db.Column('name', db.Text, nullable=False)  # Assuming encrypted storage
+    _contact_info = db.Column('contact_info',db.Text, nullable=False)  # Assuming encrypted storage
 
     @hybrid_property
     def name(self):
-        query = text("SELECT repair_shop.pgp_sym_decrypt(:name, :key) AS name")
-        result =  db.session.execute(
+        query = text(
+            "SELECT repair_shop.pgp_sym_decrypt(name::bytea, :key) AS name "
+            "FROM repair_shop.clients WHERE client_id = :client_id"
+        )
+        result_name =  db.session.execute(
             query,
-            {'name': self._name, 'key': current_app.config['ENCRYPTION_KEY']}
+            {'client_id': self.client_id, 'key': current_app.config['ENCRYPTION_KEY']}
         ).scalar()
-        return result
+        return result_name
 
     @hybrid_property
     def contact_info(self):
-        query = text("SELECT repair_shop.pgp_sym_decrypt(:contact_info, :key) AS contact_info")
-        return db.session.execute(
+        query = text(
+            "SELECT repair_shop.pgp_sym_decrypt(contact_info::bytea, :key) AS contact_info "
+            "FROM repair_shop.clients WHERE client_id = :client_id"
+        )
+        result_contact_info = db.session.execute(
             query,
-            {'contact_info': self._contact_info, 'key': current_app.config['ENCRYPTION_KEY']}
+            {'client_id': self.client_id, 'key': current_app.config['ENCRYPTION_KEY']}
         ).scalar()
+        return result_contact_info
 
 class Device(db.Model):
     __tablename__ = 'devices'

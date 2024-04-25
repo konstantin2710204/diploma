@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Панель управления{% endblock %}
 
 {% block content %}
 <div class="mt-4 mb-4">
@@ -8,13 +8,45 @@
     <p>Хаб для управления заказами, сборками, архивом</p>
 </div>
 
+<!-- Кнопка для открытия модального окна создания нового заказа на ремонт -->
+<button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#createOrderModal">
+    Создать новый заказ на ремонт
+</button>
+
+<!-- Модальное окно для создания нового заказа на ремонт -->
+<div class="modal fade" id="createOrderModal" tabindex="-1" role="dialog" aria-labelledby="createOrderModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createOrderModalLabel">Новый заказ на ремонт</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form method="post" action="{{ url_for('main.create_order') }}">
+          <input type="text" name="client_name" placeholder="Имя клиента" required class="form-control mb-2">
+          <input type="text" name="client_phone" placeholder="Телефон клиента" required class="form-control mb-2">
+          <input type="text" name="type" placeholder="Тип устройства" required class="form-control mb-2">
+          <input type="text" name="model" placeholder="Модель" required class="form-control mb-2">
+          <input type="text" name="serial_number" placeholder="Серийный номер" required class="form-control mb-2">
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+            <button type="submit" class="btn btn-success">Создать заказ</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="row">
     <div class="col-md-4">
         <div class="card text-white bg-primary mb-3" style="max-width: 18rem;">
             <div class="card-header">Заказы</div>
             <div class="card-body">
-                <h5 class="card-title">Управление заказами</h5>
-                <p class="card-text">Просмотр заказа, изменение его статуса</p>
+                <h5 class="card-title">Заказы на ремонт</h5>
+                <p class="card-text">Управление заказами на ремонт</p>
                 <a href="{{ url_for('main.orders') }}" class="btn btn-light">Посмотреть заказы</a>
             </div>
         </div>
@@ -24,7 +56,7 @@
             <div class="card-header">Сборки</div>
             <div class="card-body">
                 <h5 class="card-title">Сборки компьютеров</h5>
-                <p class="card-text">Управление сборками</p>
+                <p class="card-text">Управление заказами на сборку</p>
                 <a href="{{ url_for('main.builds') }}" class="btn btn-light">Посмотреть сборки</a>
             </div>
         </div>

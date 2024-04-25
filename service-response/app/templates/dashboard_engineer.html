@@ -17,7 +17,7 @@
                 <th>Имя клиента</th>
                 <th>Номер телефона клиента</th>
                 <th>Статус заказа</th>
-                <th></th>
+                <th>Изменение статуса</th>
             </tr>
         </thead>
         <tbody>
@@ -27,7 +27,7 @@
                 <td>{{ order.device.type }}</td>
                 <td>{{ order.device.model }}</td>
                 <td>{{ order.client.name }}</td>
-                <td>{{ order.client.phone }}</td>
+                <td>{{ order.client.contact_info }}</td>
                 <td>{{ order.status }}</td>
                 <td>
                     <a href="{{ url_for('main.update_order_status', order_id=order.order_id) }}" class="btn btn-sm btn-primary">Изменить статус</a>
@@ -41,7 +41,7 @@
         </tbody>
     </table>
 
-    <h2>Computer Builds</h2>
+    <h2>Заказы на сборку компьютера</h2>
     <table class="table">
         <thead class="thead-dark">
             <tr>
@@ -58,7 +58,7 @@
             <tr>
                 <td>{{ build.build_id }}</td>
                 <td>{{ build.client.name }}</td>
-                <td>{{ build.client.phone }}</td>
+                <td>{{ build.client.contact_info }}</td>
                 <td>{{ build.components }}</td>
                 <td>{{ build.status }}</td>
                 <td>

@@ -13,6 +13,7 @@
         <tr>
             <th scope="col">#</th>
             <th scope="col">Имя клиента</th>
+            <th scope="col">Номер телефона клиента</th>
             <th scope="col">Комплектующие</th>
             <th scope="col">Статус</th>
             <th scope="col">Назначенный мастер</th>
@@ -25,6 +26,7 @@
         <tr>
             <th scope="row">{{ loop.index }}</th>
             <td>{{ build.client.name | safe }}</td>
+            <td>{{ build.client.contact_info | safe }}</td>
             <td>{{ build.components | safe }}</td>
             <td>{{ build.status }}</td>
             <td>{{ build.engineer.name }}</td>

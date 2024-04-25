@@ -54,8 +54,8 @@ CREATE TABLE employees (
 
 CREATE TABLE clients (
     client_id SERIAL PRIMARY KEY,
-    name BYTEA NOT NULL,
-    contact_info BYTEA NOT NULL
+    name text NOT NULL,
+    contact_info text NOT NULL
 );
 
 CREATE TABLE devices (
@@ -104,6 +104,7 @@ CREATE TABLE archived_computer_builds (
     components_cost DECIMAL(10, 2) NOT NULL,
     service_fee DECIMAL(10, 2) NOT NULL,
     status VARCHAR(50) NOT NULL CHECK (status in ('завершен')),
+    creation_date DATE NOT NULL DEFAULT CURRENT_DATE,
     completion_date DATE NOT NULL
 );
 
@@ -118,6 +119,24 @@ GRANT SELECT, INSERT, UPDATE ON orders, clients TO receptionist;
 GRANT SELECT, UPDATE ON orders TO engineer;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA repair_shop TO service_owner;
 GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA repair_shop TO db_admin;
+
+-- Создаем функцию триггера для шифрования данных клиента
+CREATE OR REPLACE FUNCTION encrypt_client_data()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Шифруем имя и контактные данные клиента перед вставкой
+  NEW.name := pgp_sym_encrypt(NEW.name, 'secret_key');
+  NEW.contact_info := pgp_sym_encrypt(NEW.contact_info, 'secret_key');
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Создаем триггер, который будет вызывать функцию encrypt_client_data
+-- при каждой вставке записи в таблицу clients
+CREATE TRIGGER trigger_encrypt_client_data
+BEFORE INSERT ON repair_shop.clients
+FOR EACH ROW EXECUTE FUNCTION encrypt_client_data();
+
 
 -- Создаем функции и триггеры для архивирования заказов
 CREATE OR REPLACE FUNCTION archive_order() RETURNS TRIGGER AS $$
@@ -268,20 +287,20 @@ INSERT INTO employees (name, role, login, password_id, specialization) VALUES
 ('Василий Антонов', 'engineer', 'vantonov', 12, 'Сборщик ПК');
 
 INSERT INTO clients (name, contact_info) VALUES
-(pgp_sym_encrypt('Анна Кузнецова', 'secret_key'), pgp_sym_encrypt('+79031234501', 'secret_key')),
-(pgp_sym_encrypt('Борис Смирнов', 'secret_key'), pgp_sym_encrypt('+79031234502', 'secret_key')),
-(pgp_sym_encrypt('Вера Петрова', 'secret_key'), pgp_sym_encrypt('+79031234503', 'secret_key')),
-(pgp_sym_encrypt('Глеб Орлов', 'secret_key'), pgp_sym_encrypt('+79031234504', 'secret_key')),
-(pgp_sym_encrypt('Дарья Морозова', 'secret_key'), pgp_sym_encrypt('+79031234505', 'secret_key')),
-(pgp_sym_encrypt('Егор Козлов', 'secret_key'), pgp_sym_encrypt('+79031234506', 'secret_key')),
-(pgp_sym_encrypt('Жанна Васильева', 'secret_key'), pgp_sym_encrypt('+79031234507', 'secret_key')),
-(pgp_sym_encrypt('Зинаида Николаева', 'secret_key'), pgp_sym_encrypt('+79031234508', 'secret_key')),
-(pgp_sym_encrypt('Игорь Сидоров', 'secret_key'), pgp_sym_encrypt('+79031234509', 'secret_key')),
-(pgp_sym_encrypt('Кира Лебедева', 'secret_key'), pgp_sym_encrypt('+79031234510', 'secret_key')),
-(pgp_sym_encrypt('Леонид Егоров', 'secret_key'), pgp_sym_encrypt('+79031234511', 'secret_key')),
-(pgp_sym_encrypt('Мария Павлова', 'secret_key'), pgp_sym_encrypt('+79031234512', 'secret_key')),
-(pgp_sym_encrypt('Никита Глебов', 'secret_key'), pgp_sym_encrypt('+79031234513', 'secret_key')),
-(pgp_sym_encrypt('Олеся Кузнецова', 'secret_key'), pgp_sym_encrypt('+79031234514', 'secret_key'));
+('Анна Кузнецова','+79031234501'),
+('Борис Смирнов','+79031234502'),
+('Вера Петрова', '+79031234503'),
+('Глеб Орлов', '+79031234504'),
+('Дарья Морозова', '+79031234505'),
+('Егор Козлов', '+79031234506'),
+('Жанна Васильева', '+79031234507'),
+('Зинаида Николаева', '+79031234508'),
+('Игорь Сидоров', '+79031234509'),
+('Кира Лебедева', '+79031234510'),
+('Леонид Егоров', '+79031234511'),
+('Мария Павлова', '+79031234512'),
+('Никита Глебов', '+79031234513'),
+('Олеся Кузнецова', '+79031234514');
 
 INSERT INTO devices (type, model, serial_number) VALUES
 ('Ноутбук', 'Apple MacBook Pro 16', 'SN1001'),
@@ -327,9 +346,9 @@ INSERT INTO computer_builds (client_id, components, components_cost, creation_da
 CREATE OR REPLACE VIEW order_details AS
 SELECT
     o.order_id AS order_number,                         -- Добавление номера заказа
-    pgp_sym_decrypt(c.name, 'secret_key') AS client_name,
+    pgp_sym_decrypt(c.name::bytea, 'secret_key') AS client_name,
     d.type || ': ' || d.model AS device_model,          -- Объединение типа и модели устройства
-    pgp_sym_decrypt(c.contact_info, 'secret_key') AS client_phone,  -- Добавление номера заказа к номеру телефона
+    pgp_sym_decrypt(c.contact_info::bytea, 'secret_key') AS client_phone,  -- Добавление номера заказа к номеру телефона
     o.status AS order_status,
     e.name AS engineer_name
 FROM
@@ -341,8 +360,8 @@ FROM
 CREATE OR REPLACE VIEW computer_build_details AS
 SELECT
     cb.build_id AS build_number,
-    pgp_sym_decrypt(c.name, 'secret_key') AS client_name,
-    pgp_sym_decrypt(c.contact_info, 'secret_key') AS client_phone,
+    pgp_sym_decrypt(c.name::bytea, 'secret_key') AS client_name,
+    pgp_sym_decrypt(c.contact_info::bytea, 'secret_key') AS client_phone,
     cb.status AS build_status,
     e.name AS engineer_name,
     REPLACE(cb.components, ', ', E'\n') AS components  -- Замена запятых на символы новой строки
