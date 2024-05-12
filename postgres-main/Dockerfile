@@ -4,7 +4,7 @@ FROM postgres:16.2-alpine
 # Устанавливаем необходимые переменные окружения
 ENV POSTGRES_USER postgres
 ENV POSTGRES_PASSWORD password
-ENV POSTGRES_DB postres
+ENV POSTGRES_DB postgres
 
 # Этот файл Dockerfile не требует дополнительной настройки
 # PostgreSQL будет запущен с указанными переменными окружения

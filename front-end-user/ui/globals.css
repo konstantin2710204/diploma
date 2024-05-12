@@ -1,0 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* .h1-style {
+    @apply text-center text-[42px] font-bold text-[#E9EFF0] font-jura;
+} */

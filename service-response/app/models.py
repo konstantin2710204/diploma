@@ -42,9 +42,9 @@ class Employee(db.Model):
 class Client(db.Model):
     __tablename__ = 'clients'
     __table_args__ = {'schema': 'repair_shop'}
-    client_id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     _name = db.Column('name', db.Text, nullable=False)  # Assuming encrypted storage
-    _contact_info = db.Column('contact_info',db.Text, nullable=False)  # Assuming encrypted storage
+    _contact_info = db.Column('contact_info', db.Text, nullable=False)  # Assuming encrypted storage
 
     @hybrid_property
     def name(self):
