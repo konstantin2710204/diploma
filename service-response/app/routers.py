@@ -1,6 +1,4 @@
-from flask import Flask, Blueprint, request, render_template, redirect, url_for, flash, session, current_app
-from sqlalchemy.sql import text
-from sqlalchemy.ext.hybrid import hybrid_property
+from flask import Blueprint, request, render_template, redirect, url_for, flash, session, current_app
 from .models import db, Employee, Order, ComputerBuild, ArchivedOrder, ArchivedComputerBuild, Client, Device, CallbackOrder, CallbackComputerBuild
 from .forms import LoginForm, OrderForm, BuildForm
 
@@ -12,11 +10,11 @@ def index():
         return redirect(url_for('main.login'))
     # Определите роль пользователя и покажите соответствующую дашборду
     user = Employee.query.get(session['user_id'])
-    if user.role == 'engineer':
+    if user.role.name == 'Инженер':
         orders = Order.query.filter_by(engineer_id=user.employee_id).all()
         builds = ComputerBuild.query.filter_by(engineer_id=user.employee_id).all()
         return render_template('dashboard_engineer.html', user=user, orders=orders, builds=builds)
-    elif user.role == 'receptionist':
+    elif user.role.name == 'Приемщик':
         orders = Order.query.all()
         builds = ComputerBuild.query.all()
         return render_template('dashboard_receptionist.html', user=user, orders=orders, builds=builds)
@@ -35,7 +33,8 @@ def login():
         if user and current_app.bcrypt.check_password_hash(user.password.hashed_password, form.password.data):
             session['user_id'] = user.employee_id
             return redirect(url_for('main.index'))
-        flash('Invalid username or password')
+        else:
+            flash('Неправильный логин или пароль', 'error')
     return render_template('login.html', form=form)
 
 @main.route('/logout')
@@ -48,7 +47,7 @@ def orders():
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
     user = Employee.query.get(session['user_id'])
-    if user.role == 'receptionist' or user.role == 'service_owner':
+    if user.role.name == 'Приемщик' or user.role.name == 'Владелец':
         orders = Order.query.all()
     else:
         orders = Order.query.filter_by(engineer_id=user.employee_id).all()
@@ -58,90 +57,55 @@ def orders():
 def create_order():
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
-    user = Employee.query.get(session['user_id'])
-    if user.role not in ['receptionist', 'service_owner']:
-        return redirect(url_for('main.login'))
-
-    client_name = request.form['client_name']
-    client_phone = request.form['client_phone']
-    device_type = request.form['type']
-    model = request.form['model']
-    serial_number = request.form['serial_number']
-
-    # new_client = Client(
-    #     name=client_name,
-    #     contact_info=client_phone
-    # )
-    # db.session.add(new_client)
-    # db.session.commit()
-
-    # print(new_client.client_id)
-
-    # new_device = Device(
-    #     type=device_type,
-    #     model=model,
-    #     serial_number=serial_number
-    # )
-    # db.session.add(new_device)
-    # db.session.commit()
-
-    # Надо сделать
-    # Поиск клиента по номеру телефона
     
-    @hybrid_property
-    def contact_info(self):
-        query = text(
-            "SELECT repair_shop.pgp_sym_decrypt(contact_info::bytea, :key) AS contact_info "
-            "FROM repair_shop.clients"
-        )
-        result_contact_info = db.session.execute(
-            query,
-            {'key': current_app.config['ENCRYPTION_KEY']}
-        ).scalar()
-        return result_contact_info
-
-    client = contact_info
-
-    # Если клиент не найден, создать нового
-    if client is None:
-        new_client = Client(
-            name=client_name, 
-            contact_info=client_phone
-        )
-        db.session.add(new_client)
-        db.session.flush()
-
-        client = new_client
-
-    # Поиск устройства по серийному номеру
-    device = Device.query.filter_by(serial_number=serial_number).first()
-
-    # Если устройство не найдено, создать новое
-    if device is None:
+    if request.method == 'POST':
+        client_name = request.form['client_name']
+        client_phone = request.form['client_phone']
+        device_type = request.form['type']
+        device_model = request.form['model']
+        device_serial_number = request.form['serial_number']
+        
+        # Проверка существования клиента
+        existing_client = Client.query.filter(
+            Client._name == db.func.pgp_sym_encrypt(client_name, current_app.config['ENCRYPTION_KEY']),
+            Client._phone_number == db.func.pgp_sym_encrypt(client_phone, current_app.config['ENCRYPTION_KEY'])
+        ).first()
+        
+        if existing_client:
+            client_id = existing_client.client_id
+        else:
+            # Создание нового клиента
+            new_client = Client(
+                _name=db.func.pgp_sym_encrypt(client_name, current_app.config['ENCRYPTION_KEY']),
+                _phone_number=db.func.pgp_sym_encrypt(client_phone, current_app.config['ENCRYPTION_KEY'])
+            )
+            db.session.add(new_client)
+            db.session.commit()
+            client_id = new_client.client_id
+        
+        # Добавление устройства
         new_device = Device(
-            type=device_type, 
-            model=model, 
-            serial_number=serial_number
+            client_id=client_id,
+            type=device_type,
+            model=device_model,
+            serial_number=device_serial_number
         )
         db.session.add(new_device)
-        db.session.flush()
-        device = new_device
-    
-    # Создание нового заказа
-    new_order = Order(
-        client_id=new_client.client_id,
-        device_id=new_device.device_id
-    )
-    db.session.add(new_order)
-    
-    try:
         db.session.commit()
-        flash('Новый заказ создан успешно!')
-    except Exception as e:
-        db.session.rollback()
-        flash('Ошибка при создании заказа: ' + str(e))
-
-    return redirect(url_for('main.orders'))
+        device_id = new_device.device_id
+        
+        # Создание нового заказа
+        new_order = Order(
+            device_id=device_id,
+            engineer_id=None,  # Здесь можно добавить логику назначения инженера
+            defect=None,
+            status='Создан'
+        )
+        db.session.add(new_order)
+        db.session.commit()
+        
+        flash('Заказ успешно создан')
+        return redirect(url_for('main.orders'))
 
 
 @main.route('/order/<int:order_id>/update_status', methods=['GET', 'POST'])
@@ -159,7 +123,7 @@ def builds():
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
     user = Employee.query.get(session['user_id'])
-    if user.role == 'receptionist' or user.role == 'service_owner':
+    if user.role.name == 'Приемщик' or user.role.name == 'Владелец':
         builds = ComputerBuild.query.all()
     else:
         builds = ComputerBuild.query.filter_by(engineer_id=user.employee_id).all()
@@ -170,7 +134,7 @@ def create_build():
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
     user = Employee.query.get(session['user_id'])
-    if user.role == 'receptionist' or user.role == 'service_owner':
+    if user.role.name == 'Приемщик' or user.role.name == 'Владелец':
         client_name = request.form['client_name']
         client_phone = request.form['client_phone']
         budget = request.form['budget']
@@ -182,7 +146,7 @@ def create_build():
         db.session.commit()
 
         # Создание новой сборки
-        new_build = ComputerBuild(client_id=new_client.id, budget=budget, build_preferences=preferences, status='создан')
+        new_build = ComputerBuild(client_id=new_client.id, budget=budget, build_preferences=preferences, status='Создан')
         db.session.add(new_build)
         db.session.commit()
 
@@ -206,7 +170,7 @@ def archive():
     if 'user_id' not in session:
         return redirect(url_for('main.login'))
     user = Employee.query.get(session['user_id'])
-    if user.role == 'receptionist' or user.role == 'service_owner':
+    if user.role.name == 'Приемщик' or user.role.name == 'Владелец':
         archived_orders = ArchivedOrder.query.all()
         archived_builds = ArchivedComputerBuild.query.all()
     return render_template('archive.html', archived_orders=archived_orders, archived_builds=archived_builds)

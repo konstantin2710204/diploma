@@ -20,130 +20,267 @@ CREATE SCHEMA repair_shop;
 SET search_path TO 'repair_shop';
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+CREATE TABLE suppliers(
+    supplier_id SERIAL PRIMARY KEY,
+    type VARCHAR(30) NOT NULL CHECK ( type in ('Разъемы',
+                                               'Конденсаторы',
+                                               'Резисторы',
+                                               'Видеопамять',
+                                               'Чипы GPU',
+                                               'Чипы СPU',
+                                               'Чипсеты',
+                                               'Сокеты',
+                                               'Донорские компоненты',
+                                               'Термопасты',
+                                               'Термопаста с фазовым переходом',
+                                               'Термопрокладки',
+                                               'Жидкие термопрокладки',
+                                               'Салфетки',
+                                               'Обезжириватель',
+                                               'Канифоль',
+                                               'BGA шарики',
+                                               'Медная проволока') ),
+    name TEXT NOT NULL,
+    address TEXT NOT NULL,
+    contact_info TEXT NOT NULL
+);
+
+CREATE TABLE components (
+    component_id SERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    serial_number VARCHAR(100) UNIQUE NOT NULL,
+    usage VARCHAR(100) NOT NULL
+);
+
+CREATE UNIQUE INDEX idx_serial_number ON components (serial_number);
+
+CREATE TABLE supplies (
+    supply_id SERIAL PRIMARY KEY,
+    suppliers_id INT NOT NULL REFERENCES suppliers(supplier_id),
+    component_id INT NOT NULL REFERENCES components(component_id),
+    quantity INT NOT NULL CHECK ( quantity > 0 ),
+    placing_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    departure_date DATE
+);
+
+CREATE TABLE equipment (
+    equipment_id SERIAL PRIMARY KEY,
+    type VARCHAR(50) NOT NULL CHECK ( type IN ('Монитор',
+                                               'Клавиатура',
+                                               'Мышь',
+                                               'Принтер',
+                                               'Сканер',
+                                               'Компьютер',
+                                               'Роутер',
+                                               'Хаб',
+                                               'Источник питания',
+                                               'Микроскоп',
+                                               'Паяльник',
+                                               'Cтол',
+                                               'Кресло',
+                                               'Коврик',
+                                               'Лабораторный блок питания',
+                                               'Натфиль',
+                                               'Отвертка',
+                                               'Настольная лампа') ),
+    name VARCHAR(50) NOT NULL,
+    quantity INT NOT NULL CHECK ( quantity > 0 ),
+    purchase_date DATE NOT NULL
+);
+
 -- Создание таблицы с заявками на обратный звонок по ремонту
 CREATE TABLE callback_orders (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    phone_number VARCHAR(50) NOT NULL
+    phone_number VARCHAR(50) NOT NULL CHECK ( phone_number ~ '^8[0-9]{10}$' ),
+    model VARCHAR(100) NOT NULL,
+    defect VARCHAR(255) NOT NULL
 );
 
 --Создание таблицы с заявками на обратный звонок по сборкам компьютеров
 CREATE TABLE callback_computer_builds (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    phone_number VARCHAR(50) NOT NULL,
+    phone_number VARCHAR(50) NOT NULL CHECK ( phone_number ~ '^8[0-9]{10}$' ),
     budget DECIMAL(10, 2), -- Бюджет на сборку
     usage_tasks TEXT,       -- Задачи использования компьютера
     build_preferences TEXT  -- Предпочтения по сборке
 );
 
--- Создаем таблицы
+-- Создание таблицы с паролями для сотрудников
 CREATE TABLE passwords (
     password_id SERIAL PRIMARY KEY,
     hashed_password TEXT NOT NULL
 );
 
+CREATE TABLE roles (
+    role_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL CHECK ( name IN ('Инженер',
+                                                'Приемщик',
+                                                'Владелец',
+                                                'Администратор баз данных') )
+);
+
+CREATE TABLE specializations (
+    specialization_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL CHECK ( name IN ('Видеокарта',
+                                                'Ноутбук',
+                                                'Материнская плата',
+                                                'Системный блок',
+                                                'Сборщик системных блоков',
+                                                'Владелец',
+                                                'Приемщик',
+                                                'Администратор баз данных') )
+);
+
+-- Создание таблицы с сотрудниками
 CREATE TABLE employees (
     employee_id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    role VARCHAR(50) NOT NULL,
-    specialization VARCHAR(255),
-    login VARCHAR(255) UNIQUE NOT NULL,
-    password_id INT REFERENCES passwords(password_id)
+    password_id INT REFERENCES passwords(password_id),
+    role_id INT NOT NULL REFERENCES roles(role_id),
+    specialization_id INT NOT NULL REFERENCES specializations(specialization_id),
+    fname VARCHAR(50) NOT NULL,
+    lname VARCHAR(50) NOT NULL,
+    mname VARCHAR(50),
+    passport_number TEXT,
+    login VARCHAR(255) UNIQUE NOT NULL
 );
 
+-- Создание таблицы с клиентами
 CREATE TABLE clients (
     client_id SERIAL PRIMARY KEY,
-    name text NOT NULL,
-    contact_info text NOT NULL
+    name TEXT NOT NULL ,
+    phone_number TEXT NOT NULL
 );
 
+-- Создание таблицы с техникой клиентов
 CREATE TABLE devices (
     device_id SERIAL PRIMARY KEY,
-    type VARCHAR(50) NOT NULL,
+    client_id INT NOT NULL REFERENCES clients(client_id),
+    type VARCHAR(50) NOT NULL CHECK ( type IN( 'Ноутбук',
+                                               'Видеокарта',
+                                               'Материнская плата',
+                                               'Системный блок' ) ),
     model VARCHAR(255) NOT NULL,
     serial_number VARCHAR(255) NOT NULL
 );
 
+-- Создание таблицы с заказами на ремонт
 CREATE TABLE orders (
     order_id SERIAL PRIMARY KEY,
-    client_id INT REFERENCES clients(client_id),
-    device_id INT REFERENCES devices(device_id),
-    status VARCHAR(50) NOT NULL DEFAULT 'создан' CHECK (status in ('создан', 'в работе', 'готов к выдаче', 'завершен')),
-    engineer_id INT REFERENCES employees(employee_id),
-    creation_date DATE NOT NULL,
-    cost DECIMAL(10, 2) -- Добавляем столбец для стоимости
+    device_id INT NOT NULL REFERENCES devices(device_id),
+    engineer_id INT NOT NULL REFERENCES employees(employee_id),
+    defect VARCHAR(255),
+    status VARCHAR(50) NOT NULL DEFAULT 'Создан'
+        CHECK (status in ('Создан',
+                          'В работе',
+                          'Готов к выдаче',
+                          'Завершен')),
+    cost DECIMAL(10, 2),
+    creation_date DATE NOT NULL DEFAULT CURRENT_DATE
 );
 
+-- Создание таблицы с заказами на сборку системного блока
 CREATE TABLE computer_builds (
     build_id SERIAL PRIMARY KEY,
-    engineer_id INT REFERENCES employees(employee_id),
-    client_id INT REFERENCES clients(client_id),
+    client_id INT NOT NULL REFERENCES clients(client_id),
+    engineer_id INT NOT NULL REFERENCES employees(employee_id),
     components TEXT NOT NULL,
     components_cost DECIMAL(10, 2) NOT NULL,
     service_fee DECIMAL(10, 2) GENERATED ALWAYS AS (components_cost * 0.08) STORED,
-    creation_date DATE NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'создан' CHECK (status in ('создан', 'в работе', 'готов к выдаче', 'завершен'))
+    status VARCHAR(50) NOT NULL DEFAULT 'Создан'
+        CHECK (status in ('Создан',
+                          'В работе',
+                          'Готов к выдаче',
+                          'Завершен')),
+    creation_date DATE NOT NULL DEFAULT CURRENT_DATE
 );
 
+-- Создание таблицы с архивными заказами на ремонт
 CREATE TABLE archived_orders (
-    order_id INT PRIMARY KEY,
-    client_id INT REFERENCES clients(client_id),
+    id INT NOT NULL,
     device_id INT REFERENCES devices(device_id),
-    status VARCHAR(50) NOT NULL CHECK (status in ('завершен')),
     engineer_id INT REFERENCES employees(employee_id),
+    status VARCHAR(50) NOT NULL CHECK (status in ('Завершен')),
+    cost DECIMAL(10, 2),
     creation_date DATE NOT NULL,
-    completion_date DATE NOT NULL
+    completion_date DATE NOT NULL DEFAULT CURRENT_DATE
 );
 
+-- Создание таблицы с архивными заказами на сборку системного блока
 CREATE TABLE archived_computer_builds (
-    build_id INT PRIMARY KEY,
-    engineer_id INT REFERENCES employees(employee_id),
+    id INT NOT NULL,
     client_id INT REFERENCES clients(client_id),
+    engineer_id INT REFERENCES employees(employee_id),
     components TEXT NOT NULL,
     components_cost DECIMAL(10, 2) NOT NULL,
     service_fee DECIMAL(10, 2) NOT NULL,
-    status VARCHAR(50) NOT NULL CHECK (status in ('завершен')),
-    creation_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    completion_date DATE NOT NULL
+    status VARCHAR(50) NOT NULL CHECK (status in ('Завершен')),
+    creation_date DATE NOT NULL,
+    completion_date DATE NOT NULL DEFAULT CURRENT_DATE
 );
 
--- Создаем роли и пользователей для каждой роли
+-- Создание роли и пользователей для каждой роли
 CREATE ROLE receptionist;
 CREATE ROLE engineer;
 CREATE ROLE service_owner;
 CREATE ROLE db_admin;
 
--- Назначаем права доступа
+-- Назначение прав доступа
 GRANT SELECT, INSERT, UPDATE ON orders, clients TO receptionist;
 GRANT SELECT, UPDATE ON orders TO engineer;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA repair_shop TO service_owner;
 GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA repair_shop TO db_admin;
 
--- Создаем функцию триггера для шифрования данных клиента
+-- Триггер на щифрование данных клиента
 CREATE OR REPLACE FUNCTION encrypt_client_data()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Шифруем имя и контактные данные клиента перед вставкой
   NEW.name := pgp_sym_encrypt(NEW.name, 'secret_key');
+  NEW.phone_number := pgp_sym_encrypt(NEW.phone_number, 'secret_key');
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_encrypt_client_data
+BEFORE INSERT ON repair_shop.clients
+FOR EACH ROW EXECUTE FUNCTION encrypt_client_data();
+
+CREATE OR REPLACE FUNCTION encrypt_employees_data()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Шифруем имя и контактные данные клиента перед вставкой
+  NEW.passport_number := pgp_sym_encrypt(NEW.passport_number, 'secret_key');
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_encrypt_employees_data
+BEFORE INSERT ON repair_shop.employees
+FOR EACH ROW EXECUTE FUNCTION encrypt_employees_data();
+
+CREATE OR REPLACE FUNCTION encrypt_supplier_data()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.name := pgp_sym_encrypt(NEW.name, 'secret_key');
+  NEW.address := pgp_sym_encrypt(NEW.address, 'secret_key');
   NEW.contact_info := pgp_sym_encrypt(NEW.contact_info, 'secret_key');
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Создаем триггер, который будет вызывать функцию encrypt_client_data
--- при каждой вставке записи в таблицу clients
-CREATE TRIGGER trigger_encrypt_client_data
-BEFORE INSERT ON repair_shop.clients
-FOR EACH ROW EXECUTE FUNCTION encrypt_client_data();
+CREATE TRIGGER trigger_encrypt_supplier_data
+BEFORE INSERT ON repair_shop.suppliers
+FOR EACH ROW EXECUTE FUNCTION encrypt_supplier_data();
 
 
 -- Создаем функции и триггеры для архивирования заказов
 CREATE OR REPLACE FUNCTION archive_order() RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.status = 'завершен' THEN
-        INSERT INTO repair_shop.archived_orders (order_id, client_id, device_id, status, engineer_id, creation_date, completion_date)
-        VALUES (NEW.order_id, NEW.client_id, NEW.device_id, NEW.status, NEW.engineer_id, NEW.creation_date, CURRENT_DATE);
+    IF NEW.status = 'Завершен' THEN
+        INSERT INTO repair_shop.archived_orders (id, device_id, engineer_id, status, cost, creation_date)
+        VALUES (NEW.order_id, NEW.device_id, NEW.engineer_id, NEW.status, NEW.cost, NEW.creation_date);
         DELETE FROM repair_shop.orders WHERE order_id = NEW.order_id;
     END IF;
     RETURN NEW;
@@ -151,14 +288,14 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_archive_order AFTER UPDATE ON repair_shop.orders
-FOR EACH ROW WHEN (OLD.status IS DISTINCT FROM NEW.status AND NEW.status = 'завершен')
+FOR EACH ROW WHEN (OLD.status IS DISTINCT FROM NEW.status AND NEW.status = 'Завершен')
 EXECUTE FUNCTION archive_order();
 
 CREATE OR REPLACE FUNCTION archive_computer_build() RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.status = 'завершен' THEN
-        INSERT INTO repair_shop.archived_computer_builds (build_id, engineer_id, components, components_cost, service_fee, status, completion_date)
-        VALUES (NEW.build_id, NEW.engineer_id, NEW.components, NEW.components_cost, NEW.service_fee, NEW.status, CURRENT_DATE);
+    IF NEW.status = 'Завершен' THEN
+        INSERT INTO repair_shop.archived_computer_builds (id, client_id, engineer_id, components, components_cost, service_fee, status, creation_date)
+        VALUES (NEW.build_id, NEW.client_id, NEW.engineer_id, NEW.components, NEW.components_cost, NEW.service_fee, NEW.status, NEW.creation_date);
         DELETE FROM repair_shop.computer_builds WHERE build_id = NEW.build_id;
     END IF;
     RETURN NEW;
@@ -166,14 +303,14 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_archive_computer_build AFTER UPDATE ON repair_shop.computer_builds
-FOR EACH ROW WHEN (OLD.status IS DISTINCT FROM NEW.status AND NEW.status = 'завершен')
+FOR EACH ROW WHEN (OLD.status IS DISTINCT FROM NEW.status AND NEW.status = 'Завершен')
 EXECUTE FUNCTION archive_computer_build();
 
-CREATE OR REPLACE FUNCTION assign_engineer()
-RETURNS TRIGGER AS $$
+-- Новый триггер для назначения инженера на заказ по ремонту в зависимости от его специализации и загруженности
+CREATE OR REPLACE FUNCTION assign_engineer() RETURNS TRIGGER AS $$
 DECLARE
     selected_engineer_id INT;
-    device_type VARCHAR;
+    device_type VARCHAR(50);
 BEGIN
     -- Получение типа устройства для нового заказа
     SELECT type INTO device_type FROM repair_shop.devices WHERE device_id = NEW.device_id;
@@ -181,10 +318,14 @@ BEGIN
     -- Выбор инженера с наименьшим количеством активных заказов, который специализируется на типе устройства заказа
     SELECT e.employee_id INTO selected_engineer_id
     FROM repair_shop.employees e
-    LEFT JOIN repair_shop.orders o ON e.employee_id = o.engineer_id AND o.status NOT IN ('завершен', 'готов к выдаче', 'в работе')
-    WHERE e.specialization = device_type
-    GROUP BY e.employee_id
-    ORDER BY COUNT(o.order_id) ASC
+    LEFT JOIN (
+        SELECT engineer_id, COUNT(*) AS active_orders
+        FROM repair_shop.orders
+        WHERE status IN ('Создан', 'В работе')
+        GROUP BY engineer_id
+    ) o ON e.employee_id = o.engineer_id
+    WHERE e.specialization_id = (SELECT specialization_id FROM repair_shop.specializations WHERE name = device_type)
+    ORDER BY COALESCE(o.active_orders, 0) ASC
     LIMIT 1;
 
     -- Проверяем, найден ли инженер
@@ -198,23 +339,29 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Триггер для назначения инженера на заказ по ремонту
 CREATE TRIGGER trigger_assign_engineer
 BEFORE INSERT ON repair_shop.orders
 FOR EACH ROW
 EXECUTE FUNCTION assign_engineer();
 
-CREATE OR REPLACE FUNCTION assign_assembler()
-RETURNS TRIGGER AS $$
+-- Новый триггер для назначения инженера на заказ по ремонту в зависимости от его специализации и загруженности
+CREATE OR REPLACE FUNCTION assign_assembler() RETURNS TRIGGER AS $$
 DECLARE
     selected_engineer_id INT;
 BEGIN
+
     -- Выбор инженера с наименьшим количеством активных заказов, который специализируется на типе устройства заказа
     SELECT e.employee_id INTO selected_engineer_id
     FROM repair_shop.employees e
-    LEFT JOIN repair_shop.computer_builds cb ON e.employee_id = cb.engineer_id AND cb.status NOT IN ('завершен', 'готов к выдаче', 'в работе')
-    WHERE e.specialization = 'Сборщик ПК'
-    GROUP BY e.employee_id
-    ORDER BY COUNT(cb.build_id) ASC
+    LEFT JOIN (
+        SELECT engineer_id, COUNT(*) AS active_orders
+        FROM repair_shop.orders
+        WHERE status IN ('Создан', 'В работе')
+        GROUP BY engineer_id
+    ) o ON e.employee_id = o.engineer_id
+    WHERE e.specialization_id = (SELECT specialization_id FROM repair_shop.specializations WHERE name = 'Сборщик системных блоков')
+    ORDER BY COALESCE(o.active_orders, 0) ASC
     LIMIT 1;
 
     -- Проверяем, найден ли инженер
@@ -228,161 +375,198 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trigger_assign_assembler
+-- Триггер для назначения инженера на заказ по ремонту
+CREATE TRIGGER trigger_assign_engineer
 BEFORE INSERT ON repair_shop.computer_builds
 FOR EACH ROW
 EXECUTE FUNCTION assign_assembler();
 
+
 -- Вставка начальных данных (вставки для таблиц passwords, employees, clients и т.д. здесь не повторяются для краткости)
 
-INSERT INTO callback_orders (name, phone_number) VALUES
-('Петр Иванов', '+79031567890'),
-('Мария Семенова', '+79032567890'),
-('Анатолий Жуков', '+79033567890'),
-('Светлана Петрова', '+79034567890'),
-('Дмитрий Орлов', '+79035567890');
+-- Вставка начальных данных для таблицы suppliers
+INSERT INTO suppliers (type, name, address, contact_info) VALUES
+('Разъемы', 'ООО "Разъем Сервис"', '123456, Россия, Москва, Тверская, дом 10', 'razem-service@example.com'),
+('Конденсаторы', 'ЗАО "Конденсатор-М"', '654321, Россия, Санкт-Петербург, Невский, дом 5', 'condensator-m@example.com'),
+('Резисторы', 'ИП "РезисторПром"', '234567, Россия, Новосибирск, Ленина, дом 15', 'resistor-prom@example.com'),
+('Видеопамять', 'АО "Видеопамять Инк"', '765432, Россия, Екатеринбург, Мира, дом 8', 'videomemory-inc@example.com'),
+('Чипы GPU', 'ООО "ГПУ Комплект"', '876543, Россия, Казань, Победы, дом 20', 'gpu-komplekt@example.com');
 
+-- Вставка начальных данных для таблицы components
+INSERT INTO components (name, serial_number, usage) VALUES
+('Разъем HDMI', 'HDMI-123456', 'Видеокарты'),
+('Конденсатор 10uF', 'C10uF-654321', 'Материнские платы'),
+('Резистор 100 Ом', 'R100-234567', 'Ноутбуки'),
+('Видеопамять 2GB', 'VRAM2GB-765432', 'Видеокарты'),
+('Чип GPU RTX3060', 'GPU3060-876543', 'Видеокарты');
+
+-- Вставка начальных данных для таблицы supplies
+INSERT INTO supplies (suppliers_id, component_id, quantity, departure_date) VALUES
+(1, 1, 100, '2024-05-01'),
+(2, 2, 200, '2024-05-02'),
+(3, 3, 150, '2024-05-03'),
+(4, 4, 120, '2024-05-04'),
+(5, 5, 80, '2024-05-05');
+
+-- Вставка начальных данных для таблицы equipment
+INSERT INTO equipment (type, name, quantity, purchase_date) VALUES
+('Монитор', 'Samsung', 10, '2024-01-10'),
+('Клавиатура', 'Logitech', 15, '2024-02-12'),
+('Мышь', 'Razer', 20, '2024-03-15'),
+('Принтер', 'HP', 5, '2024-04-10'),
+('Сканер', 'Canon', 8, '2024-05-08');
+
+-- Вставка начальных данных для таблицы callback_orders
+INSERT INTO callback_orders (name, phone_number, model, defect) VALUES
+('Иван Иванов', '89031234567', 'ASUS Laptop', 'Не включается'),
+('Петр Петров', '89039876543', 'MSI Videocard', 'Артефакты на экране'),
+('Сергей Сергеев', '89035432123', 'Gigabyte Motherboard', 'Не работает USB'),
+('Алексей Алексеев', '89037654321', 'Dell Laptop', 'Синий экран смерти'),
+('Николай Николаев', '89032121212', 'HP Laptop', 'Перегрев');
+
+-- Вставка начальных данных для таблицы callback_computer_builds
 INSERT INTO callback_computer_builds (name, phone_number, budget, usage_tasks, build_preferences) VALUES
-('Олег Козлов', '+79036567890', 150000, 'Для игр', 'Высокая производительность, тихий'),
-('Ирина Васильева', '+79037567890', 120000, 'Для работы', 'Надежность, много оперативной памяти'),
-('Екатерина Морозова', '+79038567890', 80000, 'Для учебы', 'Портативность, строгий внешний вид'),
-('Александр Смирнов', '+79039567890', 200000, 'Для графического дизайна', 'Мощный процессор, профессиональная видеокарта'),
-('Нина Кузнецова', '+79040567890', 100000, 'Для дома', 'Большой корпус, много мест для накопителей'),
-('Василий Петров', '+79041567890', 90000, 'Для программирования', 'Быстрый SSD, компактный'),
-('Людмила Иванова', '+79042567890', 85000, 'Для видеоигр', 'Игровая видеокарта, высокая частота процессора');
+('Михаил Михайлов', '89035556677', 50000, 'Игры, работа', 'NVidia, Intel'),
+('Дмитрий Дмитриев', '89038889900', 70000, '3D моделирование', 'AMD, SSD 1TB'),
+('Андрей Андреев', '89036661122', 45000, 'Офисная работа', 'Минимальный шум'),
+('Игорь Игорев', '89037773344', 60000, 'Видео монтаж', 'Многоядерный процессор, 16GB RAM'),
+('Роман Романов', '89039994455', 80000, 'Программирование', 'Dual Monitor Support, 32GB RAM');
 
+-- Вставка начальных данных для таблицы passwords с дополнительными сотрудниками
+INSERT INTO passwords (hashed_password) VALUES
+(crypt('password1', gen_salt('bf'))),
+(crypt('password2', gen_salt('bf'))),
+(crypt('password3', gen_salt('bf'))),
+(crypt('password4', gen_salt('bf'))),
+(crypt('password5', gen_salt('bf'))),
+(crypt('password6', gen_salt('bf'))),
+(crypt('password7', gen_salt('bf'))),
+(crypt('password8', gen_salt('bf'))),
+(crypt('password9', gen_salt('bf'))),
+(crypt('password10', gen_salt('bf'))),
+(crypt('password11', gen_salt('bf'))),
+(crypt('password12', gen_salt('bf'))),
+(crypt('password13', gen_salt('bf'))),
+(crypt('password14', gen_salt('bf'))),
+(crypt('password15', gen_salt('bf'))),
+(crypt('password16', gen_salt('bf'))),
+(crypt('password17', gen_salt('bf'))),
+(crypt('password18', gen_salt('bf'))),
+(crypt('password19', gen_salt('bf'))),
+(crypt('password20', gen_salt('bf'))),
+(crypt('password21', gen_salt('bf'))),
+(crypt('password22', gen_salt('bf'))),
+(crypt('password23', gen_salt('bf'))),
+(crypt('password24', gen_salt('bf')));
 
--- Вставка хешированных паролей
-INSERT INTO passwords (hashed_password)
-VALUES
-    (crypt('password01', gen_salt('bf'))),
-    (crypt('password02', gen_salt('bf'))),
-    (crypt('password03', gen_salt('bf'))),
-    (crypt('password04', gen_salt('bf'))),
-    (crypt('password05', gen_salt('bf'))),
-    (crypt('password06', gen_salt('bf'))),
-    (crypt('password07', gen_salt('bf'))),
-    (crypt('password08', gen_salt('bf'))),
-    (crypt('password09', gen_salt('bf'))),
-    (crypt('password10', gen_salt('bf'))),
-    (crypt('password11', gen_salt('bf'))),
-    (crypt('password12', gen_salt('bf'))),
-    (crypt('password13', gen_salt('bf'))),
-    (crypt('password14', gen_salt('bf'))),
-    (crypt('password15', gen_salt('bf')));
+-- Вставка начальных данных для таблицы roles
+INSERT INTO roles (name) VALUES
+('Инженер'),
+('Приемщик'),
+('Владелец'),
+('Администратор баз данных');
 
+-- Вставка начальных данных для таблицы specializations
+INSERT INTO specializations (name) VALUES
+('Видеокарта'),
+('Ноутбук'),
+('Материнская плата'),
+('Системный блок'),
+('Сборщик системных блоков'),
+('Владелец'),
+('Приемщик'),
+('Администратор баз данных');
 
-INSERT INTO employees (name, role, login, password_id, specialization) VALUES
-('Иван Иванов', 'engineer', 'ivanov', 1, 'Ноутбук'),
-('Елена Петрова', 'engineer', 'epetrova', 2, 'Материнская плата'),
-('Алексей Сидоров', 'engineer', 'asidorov', 3, 'Видеокарта'),
-('Марина Козлова', 'receptionist', 'mkozlova', 4, 'Прием заказов'),
-('Дмитрий Морозов', 'service_owner', 'dmorozov', 5, 'Управление услугами'),
-('Ольга Кузнецова', 'db_admin', 'okuznetsova', 6, 'Администрирование БД'),
-('Сергей Николаев', 'engineer', 'snikolaev', 7, 'Компьютер'),
-('Наталья Орлова', 'engineer', 'norlova', 8, 'Сборщик ПК'),
-('Виктор Смирнов', 'engineer', 'vsmirnov', 9, 'Видеокарта'),
-('Анна Васильева', 'engineer', 'avasilyeva', 10, 'Сборщик ПК'),
-('Иван Васильев', 'engineer', 'ivasiliev', 11, 'Сборщик ПК'),
-('Василий Антонов', 'engineer', 'vantonov', 12, 'Сборщик ПК');
+-- Вставка начальных данных для таблицы employees с дополнительными сотрудниками
+INSERT INTO employees (password_id, role_id, specialization_id, fname, lname, mname, passport_number, login) VALUES
+-- Инженеры по видеокартам
+(1, 1, 1, 'Андрей', 'Андреев', 'Андреевич', '1234567890', 'a.andreev'),
+(2, 1, 1, 'Сергей', 'Сергеев', 'Сергеевич', '2234567890', 's.sergeev'),
+(3, 1, 1, 'Геннадий', 'Владимиров', 'Владимирович', '3234567890', 'g.vladimirov'),
 
-INSERT INTO clients (name, contact_info) VALUES
-('Анна Кузнецова','+79031234501'),
-('Борис Смирнов','+79031234502'),
-('Вера Петрова', '+79031234503'),
-('Глеб Орлов', '+79031234504'),
-('Дарья Морозова', '+79031234505'),
-('Егор Козлов', '+79031234506'),
-('Жанна Васильева', '+79031234507'),
-('Зинаида Николаева', '+79031234508'),
-('Игорь Сидоров', '+79031234509'),
-('Кира Лебедева', '+79031234510'),
-('Леонид Егоров', '+79031234511'),
-('Мария Павлова', '+79031234512'),
-('Никита Глебов', '+79031234513'),
-('Олеся Кузнецова', '+79031234514');
+-- Инженеры по ноутбукам
+(4, 1, 2, 'Борис', 'Борисов', 'Борисович', '2345678901', 'b.borisov'),
+(5, 1, 2, 'Алексей', 'Алексеев', 'Алексеевич', '3345678901', 'a.alekseev'),
+(6, 1, 2, 'Михаил', 'Михайлов', 'Михайлович', '4345678901', 'm.mikhailov'),
 
-INSERT INTO devices (type, model, serial_number) VALUES
-('Ноутбук', 'Apple MacBook Pro 16', 'SN1001'),
-('Компьютер', 'HP Omen 30L', 'SN1002'),
-('Видеокарта', 'NVIDIA GeForce RTX 3080', 'SN1003'),
-('Материнская плата', 'ASUS ROG Strix Z490-E', 'SN1004'),
-('Ноутбук', 'Lenovo ThinkPad X1 Carbon', 'SN1005'),
-('Компьютер', 'Dell XPS 8930', 'SN1006'),
-('Видеокарта', 'AMD Radeon RX 6800 XT', 'SN1007'),
-('Материнская плата', 'Gigabyte B550 AORUS MASTER', 'SN1008'),
-('Ноутбук', 'Acer Predator Helios 300', 'SN1009'),
-('Компьютер', 'Alienware Aurora R11', 'SN1010'),
-('Видеокарта', 'NVIDIA GTX 1660 Super', 'SN1011'),
-('Материнская плата', 'MSI MPG Z390 Gaming Edge AC', 'SN1012'),
-('Ноутбук', 'Asus ROG Zephyrus G14', 'SN1013'),
-('Компьютер', 'Corsair One i160', 'SN1014');
+-- Инженеры по материнским платам
+(7, 1, 3, 'Владимир', 'Владимиров', 'Владимирович', '3456789012', 'v.vladimirov'),
+(8, 1, 3, 'Иван', 'Иванов', 'Иванович', '4456789012', 'i.ivanov'),
+(9, 1, 3, 'Дмитрий', 'Дмитриев', 'Дмитриевич', '5456789012', 'd.dmitriev'),
 
-INSERT INTO orders (client_id, device_id, creation_date, cost) VALUES
-(1, 1, '2023-10-01', 60000),
-(2, 2, '2023-10-02', 120000),
-(3, 3, '2023-10-03', 50000),
-(4, 4, '2023-10-04', 75000),
-(5, 5, '2023-10-05', 45000),
-(6, 6, '2023-10-06', 85000),
-(7, 7, '2023-10-07', 65000),
-(8, 8, '2023-10-08', 95000),
-(9, 9, '2023-10-09', 55000),
-(10, 10, '2023-10-10', 35000),
-(11, 11, '2023-10-11', 70000),
-(12, 12, '2023-10-12', 80000),
-(13, 13, '2023-10-13', 90000),
-(14, 14, '2023-10-14', 100000);
+-- Инженеры по системным блокам
+(10, 1, 4, 'Геннадий', 'Геннадиев', 'Геннадиевич', '4567890123', 'g.gennadiev'),
+(11, 1, 4, 'Николай', 'Николаев', 'Николаевич', '5567890123', 'n.nikolaev'),
+(12, 1, 4, 'Анатолий', 'Анатольев', 'Анатольевич', '6567890123', 'a.anatoliev'),
 
-INSERT INTO computer_builds (client_id, components, components_cost, creation_date, status) VALUES
-(1, 'Процессор: AMD Ryzen 9 7950X, Материнская плата: ASUS ROG Strix X670-E, Видеокарта: NVIDIA GeForce RTX 4080 Ti, Оперативная память: 32GB DDR5 6200MHz, SSD: Samsung 980 Pro 1TB, Блок питания: Corsair RM850x, Корпус: NZXT H510', 350000, '2024-04-01', 'создан'),
-(2, 'Процессор: Intel Core i9-14900K, Материнская плата: MSI MPG Z790 Gaming Carbon WiFi, Видеокарта: AMD Radeon RX 7900 XTX, Оперативная память: 32GB DDR5 7200MHz, SSD: Western Digital Black SN850 1TB, Блок питания: Seasonic Focus GX-850, Корпус: Fractal Design Meshify C', 300000, '2024-04-02', 'создан'),
-(3, 'Процессор: Intel Core i7-14700KF, Материнская плата: Gigabyte Z790 Aorus Elite, Видеокарта: NVIDIA GeForce RTX 4070, Оперативная память: 64GB DDR5 6400MHz, SSD: Crucial P5 1TB, Блок питания: EVGA SuperNOVA 750 G5, Корпус: Corsair 4000D Airflow', 250000, '2024-04-03', 'создан'),
-(4, 'Процессор: AMD Ryzen 5 5600X, Материнская плата: ASUS TUF Gaming B550-Plus, Видеокарта: NVIDIA GeForce RTX 4060 Ti, Оперативная память: 16GB DDR4 3600MHz, SSD: Samsung 970 Evo Plus 500GB, Блок питания: NZXT C650, Корпус: Phanteks Eclipse P400A', 200000, '2024-04-04', 'создан'),
-(5, 'Процессор: AMD Ryzen 7 7800X3D, Материнская плата: MSI MAG B650 Tomahawk, Видеокарта: AMD Radeon RX 7700 XT, Оперативная память: 32GB DDR5 7200MHz, SSD: Kingston A2000 1TB, Блок питания: Be Quiet! Pure Power 11 700W, Корпус: Be Quiet! Pure Base 500DX', 220000, '2024-04-04', 'создан'),
-(6, 'Процессор: Intel Core i5-13600KF, Материнская плата: Gigabyte B760 Vision G, Видеокарта: AMD Radeon RX 7700 XT, Оперативная память: 16GB DDR5 5600MHz, SSD: Crucial MX500 1TB, Блок питания: Corsair TXM Gold 650W, Корпус: Cooler Master MasterBox NR600', 180000, '2024-04-05', 'создан'),
-(7, 'Процессор: Intel Core i5-13400, Материнская плата: ASRock B760M Pro4, Видеокарта: NVIDIA RTX 4060, Оперативная память: 16GB DDR5 5600MHz, SSD: Samsung 860 Evo 500GB, Блок питания: Seasonic S12III 500W, Корпус: Thermaltake Versa H18', 150000, '2024-04-06', 'создан');
+-- Сборщики системных блоков
+(13, 1, 5, 'Вячеслав', 'Дмитриев', 'Дмитриевич', '5678901234', 'v.dmitriev'),
+(14, 1, 5, 'Олег', 'Олегов', 'Олегович', '6678901234', 'o.olegov'),
+(15, 1, 5, 'Евгений', 'Евгеньев', 'Евгеньевич', '7678901234', 'e.evgeniev'),
 
-CREATE OR REPLACE VIEW order_details AS
-SELECT
-    o.order_id AS order_number,                         -- Добавление номера заказа
-    pgp_sym_decrypt(c.name::bytea, 'secret_key') AS client_name,
-    d.type || ': ' || d.model AS device_model,          -- Объединение типа и модели устройства
-    pgp_sym_decrypt(c.contact_info::bytea, 'secret_key') AS client_phone,  -- Добавление номера заказа к номеру телефона
-    o.status AS order_status,
-    e.name AS engineer_name
-FROM
-    orders o
-    JOIN clients c ON o.client_id = c.client_id
-    JOIN devices d ON o.device_id = d.device_id
-    JOIN employees e ON o.engineer_id = e.employee_id;
+-- Владелец
+(16, 3, 6, 'Максим', 'Максимов', 'Максимович', '8678901234', 'm.maksimov'),
+(17, 3, 6, 'Виталий', 'Витальев', 'Витальевич', '9678901234', 'v.vitaliev'),
+(18, 3, 6, 'Роман', 'Романов', 'Романович', '1067890123', 'r.romanov'),
 
-CREATE OR REPLACE VIEW computer_build_details AS
-SELECT
-    cb.build_id AS build_number,
-    pgp_sym_decrypt(c.name::bytea, 'secret_key') AS client_name,
-    pgp_sym_decrypt(c.contact_info::bytea, 'secret_key') AS client_phone,
-    cb.status AS build_status,
-    e.name AS engineer_name,
-    REPLACE(cb.components, ', ', E'\n') AS components  -- Замена запятых на символы новой строки
-FROM
-    computer_builds cb
-    JOIN clients c ON cb.client_id = c.client_id
-    JOIN employees e ON cb.engineer_id = e.employee_id;
+-- Приемщики
+(19, 2, 7, 'Егор', 'Егоров', 'Егорович', '1178901234', 'e.egorov'),
+(20, 2, 7, 'Петр', 'Петров', 'Петрович', '1278901234', 'p.petrov'),
+(21, 2, 7, 'Федор', 'Федоров', 'Федорович', '1378901234', 'f.fedorov'),
 
-CREATE OR REPLACE VIEW top_performers AS
-SELECT
-    e.name AS employee_name,
-    e.role AS employee_role,
-    e.specialization AS employee_specialization,
-    COALESCE(MAX(o.status), 'Не определено') AS most_frequent_service,
-    COUNT(o.order_id) + COUNT(cb.build_id) AS total_services_provided,
-    COALESCE(SUM(o.cost), 0) + COALESCE(SUM(cb.components_cost), 0) AS total_revenue
-FROM
-    employees e
-    LEFT JOIN orders o ON e.employee_id = o.engineer_id AND o.creation_date >= DATE_TRUNC('month', CURRENT_DATE) AND o.creation_date < DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'
-    LEFT JOIN computer_builds cb ON e.employee_id = cb.engineer_id AND cb.creation_date >= DATE_TRUNC('month', CURRENT_DATE) AND cb.creation_date < DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'
-GROUP BY
-    e.employee_id, e.name, e.role, e.specialization
-ORDER BY
-    total_services_provided DESC;
+-- Администраторы баз данных
+(22, 4, 8, 'Константин', 'Константинов', 'Константинович', '1478901234', 'k.konstantinov'),
+(23, 4, 8, 'Юрий', 'Юрьев', 'Юрьевич', '1578901234', 'y.yurev'),
+(24, 4, 8, 'Вячеслав', 'Вячеславов', 'Вячеславович', '1678901234', 'v.vyacheslavov');
+
+-- Вставка начальных данных для таблицы clients
+INSERT INTO clients (name, phone_number) VALUES
+(pgp_sym_encrypt('Александр Александров', 'secret_key'), pgp_sym_encrypt('89031234567', 'secret_key')),
+(pgp_sym_encrypt('Евгений Евгеньев', 'secret_key'), pgp_sym_encrypt('89039876543', 'secret_key')),
+(pgp_sym_encrypt('Василий Васильев', 'secret_key'), pgp_sym_encrypt('89035432123', 'secret_key')),
+(pgp_sym_encrypt('Илья Ильин', 'secret_key'), pgp_sym_encrypt('89037654321', 'secret_key')),
+(pgp_sym_encrypt('Максим Максимов', 'secret_key'), pgp_sym_encrypt('89032121212', 'secret_key'));
+
+-- Вставка начальных данных для таблицы devices
+INSERT INTO devices (client_id, type, model, serial_number) VALUES
+(1, 'Ноутбук', 'ASUS ROG', '123ASUS456'),
+(2, 'Видеокарта', 'MSI GTX 1060', '234MSI567'),
+(3, 'Материнская плата', 'Gigabyte Z370', '345GIG456'),
+(4, 'Ноутбук', 'Dell Inspiron', '456DELL789'),
+(5, 'Ноутбук', 'HP Pavilion', '567HP678');
+
+-- Вставка начальных данных для таблицы orders
+INSERT INTO orders (device_id, engineer_id, status, cost, creation_date) VALUES
+(1, 1, 'Создан', 5000.00, '2024-05-01'),
+(2, 2, 'В работе', 7000.00, '2024-05-02'),
+(3, 3, 'Готов к выдаче', 3000.00, '2024-05-03'),
+(4, 1, 'Завершен', 4500.00, '2024-05-04'),
+(5, 2, 'Создан', 2500.00, '2024-05-05');
+
+-- Вставка начальных данных для таблицы computer_builds с актуальными данными и требуемым форматом
+INSERT INTO computer_builds (client_id, engineer_id, components, components_cost, status, creation_date) VALUES
+(1, 1,
+    'Процессор: Intel Core i5-14600, Материнская плата: ASUS ROG Strix Z790-E, Видеокарта: MSI GeForce RTX 4060 Ventus 2X, Оперативная память: Corsair Vengeance LPX 16GB DDR5-5200, Охлаждение процессора: Noctua NH-D15, Накопители: SSD Samsung 980 Pro 1TB, Блок питания: Corsair RM850x, Корпус: NZXT H510',
+    90000.00,
+    'Создан',
+    '2024-05-15'),
+(2, 2,
+    'Процессор: AMD Ryzen 5 7600X, Материнская плата: MSI B650 Tomahawk, Видеокарта: ASUS ROG Strix GeForce RTX 4070, Оперативная память: G.Skill Trident Z RGB 32GB DDR5-6000, Охлаждение процессора: Cooler Master Hyper 212 RGB, Накопители: SSD WD Black SN850 2TB, Блок питания: Seasonic Focus GX-850, Корпус: Fractal Design Meshify C',
+    130000.00,
+    'В работе',
+    '2024-05-15'),
+(3, 3,
+    'Процессор: Intel Core i7-14700K, Материнская плата: Gigabyte Z790 AORUS Ultra, Видеокарта: Gigabyte GeForce RTX 4080 Vision OC, Оперативная память: Kingston Fury Beast 64GB DDR5-6000, Охлаждение процессора: NZXT Kraken X73, Накопители: SSD Crucial P5 Plus 2TB, Блок питания: EVGA SuperNOVA 850 G5, Корпус: Lian Li PC-O11 Dynamic',
+    160000.00,
+    'Готов к выдаче',
+    '2024-05-15'),
+(4, 4,
+    'Процессор: AMD Ryzen 9 7950X, Материнская плата: ASUS ROG Crosshair VIII Hero, Видеокарта: Zotac GeForce RTX 4090 Trinity, Оперативная память: Corsair Dominator Platinum RGB 128GB DDR5-6000, Охлаждение процессора: Arctic Liquid Freezer II 360, Накопители: SSD Samsung 990 Pro 2TB, Блок питания: be quiet! Dark Power Pro 12 1200W, Корпус: Corsair 7000D Airflow',
+    270000.00,
+    'Завершен',
+    '2024-05-15'),
+(5, 5,
+    'Процессор: Intel Core i9-14900K, Материнская плата: ASUS ROG Maximus Z790 Hero, Видеокарта: EVGA GeForce RTX 4090 FTW3 Ultra, Оперативная память: G.Skill Ripjaws V 64GB DDR5-6000, Охлаждение процессора: Corsair iCUE H150i Elite Capellix, Накопители: SSD Kingston KC3000 2TB, Блок питания: Corsair AX1600i, Корпус: Phanteks Eclipse P600S',
+    320000.00,
+    'Создан',
+    '2024-05-15');

@@ -151,7 +151,7 @@ export default function Home() {
               </h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-7 p-0 w-full">
                 <div className="bg-[#222222] text-[#E9EFF0] rounded-[1.25rem] shadow-lg p-[24px] flex">
-                  <img src="warning.svg" alt="warning" className="p-[19px] pr-[18px]"/>
+                  <img src="icons/warning.svg" alt="warning" className="p-[19px] pr-[18px]"/>
                   <p className="text-[24px] mb-[4px] font-medium pl-[7px]">Не берем в работу ноутбуки<br/> старше 2020 года</p>
                 </div>
               </div>
@@ -190,7 +190,7 @@ export default function Home() {
               </h2>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-7 p-0 w-full">
                 <div className="bg-[#222222] text-[#E9EFF0] rounded-[1.25rem] shadow-lg p-[24px] flex">
-                  <img src="warning.svg" alt="warning" className="p-[19px] pr-[18px]"/>
+                  <img src="icons/warning.svg" alt="warning" className="p-[19px] pr-[18px]"/>
                   <p className="text-[24px] mb-[4px] font-medium pl-[7px]">Берем в работу только платы на<br />AM4, AM5, LGA1700, LGA1200</p>
                 </div>
               </div>
@@ -226,8 +226,17 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <div>
+      <div className="">
         <h1 className="text-center text-[42px] font-bold text-[#E9EFF0] font-jura">Вопросы</h1>
+         <details className="grid grid-cols-1 lg:grid-cols-1 gap-7 p-4 w-full text-[#E9EFF0]">
+          <summary className="grid grid-cols-1 lg:grid-cols-1 gap-7 p-4 w-full">
+            <img src="icons/expand.svg" alt="+" className="" />
+            Какую технику вы ремонтируете?
+          </summary>
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-2 p-4 w-full">
+            <p>Мы занимаемся ремонтом ноутбуков, материнских плат, видеокарт и системных блоков</p>
+          </div>
+         </details>
       </div>
       <div>
         <h1 className="text-center text-[42px] font-bold text-[#E9EFF0] font-jura">О нас</h1>
