@@ -16,7 +16,7 @@ class LoginForm(FlaskForm):
 class OrderForm(FlaskForm):
     client_id = IntegerField('Client ID', validators=[DataRequired()])
     device_id = IntegerField('Device ID', validators=[DataRequired()])
-    status = SelectField('Status', choices=[('создан', 'Создан'), ('в работе', 'В работе'), ('готов к выдаче', 'Готов к выдаче'), ('завершен', 'Завершен')], validators=[DataRequired()])
+    status = SelectField('Status', choices=[('Создан', 'Создан'), ('В работе', 'В работе'), ('Готов к выдаче', 'Готов к выдаче'), ('Завершен', 'Завершен')], validators=[DataRequired()])
     engineer_id = IntegerField('Engineer ID', validators=[DataRequired()])
     creation_date = DateField('Creation Date', format='%Y-%m-%d', validators=[DataRequired()])
     cost = DecimalField('Cost', validators=[DataRequired(), NumberRange(min=0)])
@@ -29,5 +29,5 @@ class BuildForm(FlaskForm):
     components_cost = DecimalField('Components Cost', validators=[DataRequired(), NumberRange(min=0)])
     service_fee = DecimalField('Service Fee', validators=[DataRequired(), NumberRange(min=0)])
     creation_date = DateField('Creation Date', format='%Y-%m-%d', validators=[DataRequired()])
-    status = SelectField('Status', choices=[('создан', 'Создан'), ('в работе', 'В работе'), ('готов к выдаче', 'Готов к выдаче'), ('завершен', 'Завершен')], validators=[DataRequired()])
+    status = SelectField('Status', choices=[('Cоздан', 'Создан'), ('В работе', 'В работе'), ('Готов к выдаче', 'Готов к выдаче'), ('Завершен', 'Завершен')], validators=[DataRequired()])
     submit = SubmitField('Submit')

@@ -1,76 +1,32 @@
 {% extends "base.html" %}
 
-{% block title %}Engineer Dashboard{% endblock %}
+{% block title %}Панель инженера{% endblock %}
 
 {% block content %}
 <div class="container">
     <h1>Панель инженера</h1>
-    <p>Добро пожаловать, {{ user.name }}! Вот ваши текущие задачи:</p>
+    <p>Добро пожаловать, {{ user.fname }}! Вот ваши текущие задачи:</p>
 
-    <h2>Заказы на ремонт</h2>
-    <table class="table">
-        <thead class="thead-dark">
-            <tr>
-                <th>#</th>
-                <th>Тип устройства</th>
-                <th>Модель</th>
-                <th>Имя клиента</th>
-                <th>Номер телефона клиента</th>
-                <th>Статус заказа</th>
-                <th>Изменение статуса</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for order in orders %}
-            <tr>
-                <td>{{ order.order_id }}</td>
-                <td>{{ order.device.type }}</td>
-                <td>{{ order.device.model }}</td>
-                <td>{{ order.client.name }}</td>
-                <td>{{ order.client.contact_info }}</td>
-                <td>{{ order.status }}</td>
-                <td>
-                    <a href="{{ url_for('main.update_order_status', order_id=order.order_id) }}" class="btn btn-sm btn-primary">Изменить статус</a>
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="7">Нет текущих заказов.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <h2>Заказы на сборку компьютера</h2>
-    <table class="table">
-        <thead class="thead-dark">
-            <tr>
-                <th>#</th>
-                <th>Имя клиента</th>
-                <th>Номер телефона клиента</th>
-                <th>Комплектующие</th>
-                <th>Статус заказа</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for build in builds %}
-            <tr>
-                <td>{{ build.build_id }}</td>
-                <td>{{ build.client.name }}</td>
-                <td>{{ build.client.contact_info }}</td>
-                <td>{{ build.components }}</td>
-                <td>{{ build.status }}</td>
-                <td>
-                    <a href="{{ url_for('main.update_build_status', build_id=build.build_id) }}" class="btn btn-sm btn-primary">Изменить статус</a>
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="6">Нет текущих сборок.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary mb-3" style="max-width: 27rem;">
+                <div class="card-header">Заказы</div>
+                <div class="card-body">
+                    <h5 class="card-title">Заказы на ремонт</h5>
+                    <p class="card-text">Управление заказами на ремонт</p>
+                    <a href="{{ url_for('main.orders') }}" class="btn btn-light">Посмотреть заказы</a>
+            </div>
+        </div>
+    </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-3" style="max-width: 27rem;">
+                <div class="card-header">Сборки</div>
+                <div class="card-body">
+                    <h5 class="card-title">Сборки компьютеров</h5>
+                    <p class="card-text">Управление заказами на сборку</p>
+                    <a href="{{ url_for('main.builds') }}" class="btn btn-light">Посмотреть сборки</a>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -5,12 +5,17 @@
 {% block content %}
 <div class="container">
     <h1>Панель приемщика</h1>
-    <p>Добро пожаловать, {{ user.name }}! Вы можете управлять заказами и сборками ниже:</p>
+    <p>Добро пожаловать, {{ user.fname }}! Вы можете управлять заказами и сборками ниже:</p>
 
     <!-- Кнопка для открытия модального окна создания нового заказа на ремонт -->
-    <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#createOrderModal">
-        Создать новый заказ на ремонт
-    </button>
+    <div class="d-flex justify-content-start mb-3">
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createOrderModal">
+            Создать новый заказ на ремонт
+        </button>
+        <button type="button" class="btn btn-success ml-2" data-toggle="modal" data-target="#createBuildOrderModal">
+          Создать новый заказ на сборку
+      </button>
+    </div>
 
     <!-- Модальное окно для создания нового заказа на ремонт -->
     <div class="modal fade" id="createOrderModal" tabindex="-1" role="dialog" aria-labelledby="createOrderModalLabel" aria-hidden="true">
@@ -29,6 +34,7 @@
               <input type="text" name="type" placeholder="Тип устройства" required class="form-control mb-2">
               <input type="text" name="model" placeholder="Модель" required class="form-control mb-2">
               <input type="text" name="serial_number" placeholder="Серийный номер" required class="form-control mb-2">
+              <input type="text" name="defect" placeholder="Дефект" required class="form-control mb-2">
               <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
                 <button type="submit" class="btn btn-success">Создать заказ</button>
@@ -39,75 +45,73 @@
       </div>
     </div>
 
-    <h2>Все заказы на ремонт</h2>
-    <table class="table">
-        <thead class="thead-dark">
-            <tr>
-                <th>#</th>
-                <th>Тип устройства</th>
-                <th>Модель</th>
-                <th>Имя клиента</th>
-                <th>Номер телефона клиента</th>
-                <th>Статус</th>
-                <th>Назначенный мастер</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for order in orders %}
-            <tr>
-                <td>{{ order.order_id }}</td>
-                <td>{{ order.device.type }}</td>
-                <td>{{ order.device.model }}</td>
-                <td>{{ order.client.name }}</td>
-                <td>{{ order.client.contact_info }}</td>
-                <td>{{ order.status }}</td>
-                <td>{{ order.engineer.name }}</td>
-                <td>
-                    <a href="{{ url_for('main.update_order_status', order_id=order.order_id) }}" class="btn btn-sm btn-primary">Изменить статус</a>
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="8">Заказов на ремонт не найдено.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+     <!-- Модальное окно для создания нового заказа на сборку системного блока -->
+    <div class="modal fade" id="createBuildOrderModal" tabindex="-1" role="dialog" aria-labelledby="createBuildOrderModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="createBuildOrderModalLabel">Новый заказ на сборку</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form method="post" action="{{ url_for('main.create_build') }}">
+              <input type="text" name="client_name" placeholder="Имя клиента" required class="form-control mb-2">
+              <input type="text" name="client_phone" placeholder="Телефон клиента" required class="form-control mb-2">
+              <input type="number" step="1000" name="components_cost" placeholder="Бюджет на сборку" required class="form-control mb-2">
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Отмена</button>
+                <button type="submit" class="btn btn-success">Создать заказ</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
 
-    <h2>Все заказы на сборку компьютера</h2>
-    <table class="table">
-        <thead class="thead-dark">
-            <tr>
-                <th>#</th>
-                <th>Имя клиента</th>
-                <th>Номер телефона клиента</th>
-                <th>Комплектующие</th>
-                <th>Статус заказа</th>
-                <th>Назначенный инженер</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for build in builds %}
-            <tr>
-                <td>{{ build.build_id }}</td>
-                <td>{{ build.client.name | safe}}</td>
-                <td>{{ build.client.contact_info | safe }}</td>
-                <td>{{ build.components | safe}}</td>
-                <td>{{ build.status }}</td>
-                <td>{{ build.engineer.name }}</td>
-                <td>
-                    <a href="{{ url_for('main.update_build_status', build_id=build.build_id) }}" class="btn btn-sm btn-primary">Изменить статус</a>
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="6">Сборок не найдено.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="d-flex justify-content-center flex-wrap">
+      <div class="card text-white bg-warning m-2" style="width: 40rem; display: flex; flex-direction: column; justify-content: space-between;">
+        <div class="card-header">Заявки на обратный звонок</div>
+        <div class="card-body">
+            <h5 class="card-title">Заявки на обратный звонок по вопросам ремонта или сборок компьютеров</h5>
+            <p class="card-text">Доступ к заявкам на обратный звонок</p>
+        </div>
+        <div class="card-footer">
+            <a href="{{ url_for('main.callback_orders') }}" class="btn btn-light">Посмотреть архив</a>
+        </div>
+      </div>
+      <div class="card text-white bg-primary m-2" style="width: 40rem; display: flex; flex-direction: column; justify-content: space-between;">
+          <div class="card-header">Заказы</div>
+          <div class="card-body">
+              <h5 class="card-title">Заказы на ремонт</h5>
+              <p class="card-text">Управление заказами на ремонт</p>
+          </div>
+          <div class="card-footer">
+              <a href="{{ url_for('main.orders') }}" class="btn btn-light">Посмотреть заказы</a>
+          </div>
+      </div>
+      <div class="card text-white bg-success m-2" style="width: 40rem; display: flex; flex-direction: column; justify-content: space-between;">
+          <div class="card-header">Сборки</div>
+          <div class="card-body">
+              <h5 class="card-title">Сборки компьютеров</h5>
+              <p class="card-text">Управление заказами на сборку</p>
+          </div>
+          <div class="card-footer">
+              <a href="{{ url_for('main.builds') }}" class="btn btn-light">Посмотреть сборки</a>
+          </div>
+      </div>
+      <div class="card text-white bg-info m-2" style="width: 40rem; display: flex; flex-direction: column; justify-content: space-between;">
+          <div class="card-header">Архив</div>
+          <div class="card-body">
+              <h5 class="card-title">Архив заказов и сборок</h5>
+              <p class="card-text">Доступ к архиву заказов на ремонт и сборку системного блока</p>
+          </div>
+          <div class="card-footer">
+              <a href="{{ url_for('main.archive') }}" class="btn btn-light">Посмотреть архив</a>
+          </div>
+      </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </div>

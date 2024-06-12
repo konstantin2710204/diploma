@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Computer Builds{% endblock %}
+{% block title %}Список сборок{% endblock %}
 
 {% block content %}
 <div class="mt-4 mb-4">
     <h1>Список сборок</h1>
-    <p>Список текущих сборок</p>
+    <p>Текущие сборки</p>
 </div>
 
 <table class="table table-hover">
@@ -18,7 +18,7 @@
             <th scope="col">Статус</th>
             <th scope="col">Назначенный мастер</th>
             <th scope="col">Дата создания заказа</th>
-            <th></th>
+            <th scope="col">Изменение статуса</th>
         </tr>
     </thead>
     <tbody>
@@ -26,10 +26,10 @@
         <tr>
             <th scope="row">{{ loop.index }}</th>
             <td>{{ build.client.name | safe }}</td>
-            <td>{{ build.client.contact_info | safe }}</td>
-            <td>{{ build.components | safe }}</td>
+            <td>{{ build.client.phone_number | safe }}</td>
+            <td>{{ build.components.replace(', ', '<br>' ) | safe }}</td>
             <td>{{ build.status }}</td>
-            <td>{{ build.engineer.name }}</td>
+            <td>{{ build.engineer.lname }} {{ build.engineer.fname }} {{ build.engineer.mname }}</td>
             <td>{{ build.creation_date }}</td>
             <td>
                 <a href="{{ url_for('main.update_build_status', build_id=build.build_id) }}" class="btn btn-sm btn-primary">Изменить статус</a>

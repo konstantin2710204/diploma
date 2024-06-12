@@ -63,21 +63,19 @@ def create_order():
         client_phone = request.form['client_phone']
         device_type = request.form['type']
         device_model = request.form['model']
+        device_defect = request.form['defect']
         device_serial_number = request.form['serial_number']
         
         # Проверка существования клиента
-        existing_client = Client.query.filter(
-            Client._name == db.func.pgp_sym_encrypt(client_name, current_app.config['ENCRYPTION_KEY']),
-            Client._phone_number == db.func.pgp_sym_encrypt(client_phone, current_app.config['ENCRYPTION_KEY'])
-        ).first()
+        existing_client = Client.query.filter_by(phone_number=client_phone).first()
         
         if existing_client:
             client_id = existing_client.client_id
         else:
             # Создание нового клиента
             new_client = Client(
-                _name=db.func.pgp_sym_encrypt(client_name, current_app.config['ENCRYPTION_KEY']),
-                _phone_number=db.func.pgp_sym_encrypt(client_phone, current_app.config['ENCRYPTION_KEY'])
+                name=client_name,
+                phone_number=client_phone
             )
             db.session.add(new_client)
             db.session.commit()
@@ -90,15 +88,16 @@ def create_order():
             model=device_model,
             serial_number=device_serial_number
         )
+
         db.session.add(new_device)
         db.session.commit()
         device_id = new_device.device_id
         
         # Создание нового заказа
         new_order = Order(
-            device_id=device_id,
-            engineer_id=None,  # Здесь можно добавить логику назначения инженера
-            defect=None,
+            client_id=client_id,
+            device_id=device_id, 
+            defect=device_defect,
             status='Создан'
         )
         db.session.add(new_order)
@@ -117,6 +116,29 @@ def update_order_status(order_id):
         db.session.commit()
         return redirect(url_for('main.orders'))
     return render_template('edit_order.html', form=form, order=order)
+
+@main.route('/update_order_cost/<int:order_id>', methods=['GET', 'POST'])
+def update_order_cost(order_id):
+    order = Order.query.get_or_404(order_id)
+    new_cost = request.form['cost']
+    if new_cost:
+        try:
+            order.cost = float(new_cost)
+            db.session.commit()
+            flash('Цена успешно обновлена', 'success')
+        except ValueError:
+            flash('Некорректное значение цены', 'danger')
+    else:
+        flash('Цена не может быть пустой', 'danger')
+    return redirect(url_for('main.orders'))
+
+
+@main.route('/delete_callback_order/<int:id>', methods=['GET', 'POST'])
+def delete_callback_order(id):
+    callback_order = CallbackOrder.query.get_or_404(id)
+    db.session.delete(callback_order)
+    db.session.commit()
+    return redirect(url_for('main.callback_orders'))
 
 @main.route('/builds')
 def builds():
@@ -137,16 +159,25 @@ def create_build():
     if user.role.name == 'Приемщик' or user.role.name == 'Владелец':
         client_name = request.form['client_name']
         client_phone = request.form['client_phone']
-        budget = request.form['budget']
-        preferences = request.form['preferences']
+        components_cost = request.form['components_cost']
 
-        # Создание нового клиента (пример, если клиенты не хранятся в базе)
-        new_client = Client(name=client_name, contact_info=client_phone)
-        db.session.add(new_client)
-        db.session.commit()
+        # Проверка существования клиента
+        existing_client = Client.query.filter_by(phone_number=client_phone).first()
+        
+        if existing_client:
+            client_id = existing_client.client_id
+        else:
+            # Создание нового клиента
+            new_client = Client(
+                name=client_name,
+                phone_number=client_phone
+            )
+            db.session.add(new_client)
+            db.session.commit()
+            client_id = new_client.client_id
 
         # Создание новой сборки
-        new_build = ComputerBuild(client_id=new_client.id, budget=budget, build_preferences=preferences, status='Создан')
+        new_build = ComputerBuild(client_id=client_id, components_cost=components_cost, status='Создан')
         db.session.add(new_build)
         db.session.commit()
 
@@ -165,6 +196,13 @@ def update_build_status(build_id):
         return redirect(url_for('main.builds'))
     return render_template('edit_build.html', form=form, build=build)
 
+@main.route('/delete_callback_build/<int:id>', methods=['GET', 'POST'])
+def delete_callback_build(id):
+    callback_build = CallbackComputerBuild.query.get_or_404(id)
+    db.session.delete(callback_build)
+    db.session.commit()
+    return redirect(url_for('main.callback_orders'))
+
 @main.route('/archive')
 def archive():
     if 'user_id' not in session:
@@ -175,6 +213,15 @@ def archive():
         archived_builds = ArchivedComputerBuild.query.all()
     return render_template('archive.html', archived_orders=archived_orders, archived_builds=archived_builds)
 
+@main.route('/callbacks')
+def callback_orders():
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+    user = Employee.query.get(session['user_id'])
+    if user.role.name == 'Приемщик' or user.role.name == 'Владелец':
+        callback_orders = CallbackOrder.query.all()
+        callback_builds = CallbackComputerBuild.query.all()
+    return render_template('callback_orders.html', callback_orders=callback_orders, callback_builds=callback_builds)
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -29,9 +29,6 @@
                     <a class="nav-link" href="{{ url_for('main.builds') }}">Сборки</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('main.archive') }}">Архив</a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('main.logout') }}">Выйти</a>
                 </li>
                 {% else %}
@@ -49,7 +46,7 @@
         {% endblock %}
     </div>
 
-    <footer class="footer bg-light py-3 mt-4">
+    <footer class="footer bg-light py-3 mt-4 mb-0">
         <div class="container text-center">
             <span class="text-muted">© 2024 Build Box.</span>
         </div>

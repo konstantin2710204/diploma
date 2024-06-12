@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Список заказов{% endblock %}
+{% block title %}Список заказов на ремонт{% endblock %}
 
 {% block content %}
 <div class="mt-4 mb-4">
     <h1>Список заказов на ремонт</h1>
-    <p>Здесь вы можете управлять заказами на ремонт.</p>
+    <p>Текущие заказы на ремонт</p>
 </div>
 
 <table class="table table-hover">
@@ -16,27 +16,39 @@
             <th scope="col">Номер телефона клиента</th>
             <th scope="col">Тип устройства</th>
             <th scope="col">Модель</th>
+            <th scope="col">Дефект</th>
             <th scope="col">Статус заказа</th>
-            <th scope="col"></th>
+            <th scope="col">Назначенный мастер</th>
+            <th scope="col">Дата создания заказа</th>
+            <th scope="col">Цена</th>
+            <th scope="col">Изменение статуса</th>
         </tr>
     </thead>
     <tbody>
         {% for order in orders %}
         <tr>
-            <th scope="row">{{ loop.index }}</th>
+            <td scope="row">{{ order.order_id }}</td>
             <td>{{ order.client.name | safe }}</td>
-            <td>{{ order.client.contact_info | safe }}</td>
+            <td>{{ order.client.phone_number | safe }}</td>
             <td>{{ order.device.type }}</td>
             <td>{{ order.device.model }}</td>
+            <td>{{ order.defect }}</td>
             <td>{{ order.status }}</td>
-            <td>{{ order.engineer.name }}</td>
+            <td>{{ order.engineer.lname }} {{ order.engineer.fname }} {{ order.engineer.mname }}</td>
+            <td>{{ order.creation_date }}</td>
+            <td>
+                <form action="{{ url_for('main.update_order_cost', order_id=order.order_id) }}" method="post" class="form-inline">
+                    <input type="number" step="0.01" name="cost" value="{{ order.cost }}" class="form-control form-control-sm" style="width: 80px;">
+                    <button type="submit" class="btn btn-sm btn-primary">Обновить</button>
+                </form>
+            </td>
             <td>
                 <a href="{{ url_for('main.update_order_status', order_id=order.order_id) }}" class="btn btn-sm btn-primary">Изменить статус</a>
             </td>
         </tr>
         {% else %}
         <tr>
-            <td colspan="7">Заказов на ремонт не найдено.</td>
+            <td colspan="11">Заказов на ремонт не найдено.</td>
         </tr>
         {% endfor %}
     </tbody>

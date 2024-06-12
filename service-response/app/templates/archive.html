@@ -25,7 +25,7 @@
             <tbody>
                 {% for order in archived_orders %}
                 <tr>
-                    <th scope="row">{{ loop.index }}</th>
+                    <td scope="row">{{ order.id }}</td>
                     <td>{{ order.client.name | safe }}</td>
                     <td>{{ order.device.type }}</td>
                     <td>{{ order.device.model }}</td>
@@ -55,9 +55,9 @@
             <tbody>
                 {% for build in archived_builds %}
                 <tr>
-                    <th scope="row">{{ loop.index }}</th>
+                    <td scope="row">{{ build.id }}</td>
                     <td>{{ build.client.name | safe }}</td>
-                    <td>{{ build.components | safe }}</td>
+                    <td>{{ build.components.replace(', ', '<br>' ) | safe }}</td>
                     <td>{{ build.creation_date }}</td>
                     <td>{{ build.completion_date }}</td>
                 </tr>

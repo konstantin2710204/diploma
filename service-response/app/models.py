@@ -135,16 +135,8 @@ class Client(db.Model):
     __tablename__ = 'clients'
     __table_args__ = {'schema': 'repair_shop'}
     client_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    _name = db.Column('name', db.Text, nullable=False)  # Encrypted
-    _phone_number = db.Column('phone_number', db.Text, nullable=False)  # Encrypted
-
-    @hybrid_property
-    def name(self):
-        return db.func.pgp_sym_decrypt(self._name, current_app.config['ENCRYPTION_KEY'])
-
-    @hybrid_property
-    def phone_number(self):
-        return db.func.pgp_sym_decrypt(self._phone_number, current_app.config['ENCRYPTION_KEY'])
+    name = db.Column(db.Text, nullable=False) 
+    phone_number = db.Column(db.Text, nullable=False) 
 
 class Device(db.Model):
     __tablename__ = 'devices'
@@ -174,6 +166,7 @@ class Order(db.Model):
     )
     order_id = db.Column(db.Integer, primary_key=True)
     device_id = db.Column(db.Integer, db.ForeignKey('repair_shop.devices.device_id'), nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey('repair_shop.clients.client_id'), nullable=False)
     engineer_id = db.Column(db.Integer, db.ForeignKey('repair_shop.employees.employee_id'), nullable=False)
     defect = db.Column(db.String(255))
     status = db.Column(db.String(50), nullable=False, default='Создан')
@@ -181,6 +174,7 @@ class Order(db.Model):
     creation_date = db.Column(db.Date, nullable=False, server_default=db.func.current_date())
 
     device = relationship("Device", backref="orders")
+    client = relationship("Client", backref="orders")
     engineer = relationship("Employee", backref="orders")
 
 class ComputerBuild(db.Model):
@@ -215,12 +209,14 @@ class ArchivedOrder(db.Model):
     )
     id = db.Column(db.Integer, primary_key=True)
     device_id = db.Column(db.Integer, db.ForeignKey('repair_shop.devices.device_id'))
+    client_id = db.Column(db.Integer, db.ForeignKey('repair_shop.clients.client_id'))
     engineer_id = db.Column(db.Integer, db.ForeignKey('repair_shop.employees.employee_id'))
     status = db.Column(db.String(50), nullable=False)
     cost = db.Column(db.Numeric(10, 2))
     creation_date = db.Column(db.Date, nullable=False)
     completion_date = db.Column(db.Date, nullable=False, server_default=db.func.current_date())
 
+    client = relationship("Client", backref="archived_orders")
     device = relationship("Device", backref="archived_orders")
     engineer = relationship("Employee", backref="archived_orders")
 
