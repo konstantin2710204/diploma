@@ -1,60 +1,109 @@
 version: '3.8'
 
 services:
-  back-end-service:
-    image: <your-fastapi-image>
-    ports:
-      - "8000:8000"
+  db-main:
+    build:
+      context: ./postgres-main
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: repair_shop
+    volumes:
+      - ./postgres-main/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./postgres-main/backup_script.sh:/root/backup_script.sh
+      - ./postgres-main/restore_script.sh:/root/restore_script.sh
+      - /root/backups:/root/backups
+    networks:
+      - app-network
+    command: postgres -c listen_addresses='*'
 
-  back-end-user:
-    image: <your-flask-image>
+  service-response:
+    build:
+      context: ./service-response
     ports:
       - "5000:5000"
+    networks:
+      - app-network
+    depends_on:
+      - db-main
+    command: flask run --host=0.0.0.0
 
-  front-end-service:
-    image: <your-html-css-image>
+  back-end-user:
+    build:
+      context: ./back-end-user
     ports:
-      - "80:80"
+      - "8000:8000"
+    depends_on:
+      - db-main
+      - service-response
+    networks:
+      - app-network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
 
   front-end-user:
-    image: <your-react-image>
+    build:
+      context: ./front-end-user
     ports:
       - "3000:3000"
+    depends_on:
+      - db-main
+      - service-response
+      - back-end-user
+    networks:
+      - app-network
+    command: npm run dev
 
-  monitoring:
-    image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
-
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./prometheus:/etc/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-
-  pgadmin:
-    image: dpage/pgadmin4
-    ports:
-      - "5050:5050"
+  zabbix-postgres:
+    image: postgres:alpine
     environment:
-      - PGADMIN_DEFAULT_EMAIL=user@domain.com
-      - PGADMIN_DEFAULT_PASSWORD=SuperSecret
-
-  postgres-back-up:
-    image: postgres:latest
+      POSTGRES_PASSWORD: zabbix
+      POSTGRES_USER: zabbix
     volumes:
-      - ./postgres-back-up-data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
+      - /var/lib/zabbix/timezone:/etc/timezone
+      - /var/lib/zabbix/localtime:/etc/localtime
+    networks:
+      - zabbix-net
+    command: postgres -c listen_addresses='*'
 
-  postgres-main:
-    image: postgres:latest
-    volumes:
-      - ./postgres-main-data:/var/lib/postgresql/data
+  zabbix-server:
+    image: zabbix/zabbix-server-pgsql:alpine-latest
     environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=password
+      DB_SERVER_HOST: zabbix-postgres
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: zabbix
+    ports:
+      - "10051:10051"
+    volumes:
+      - /var/lib/zabbix/alertscripts:/usr/lib/zabbix/alertscripts
+      - /var/lib/zabbix/timezone:/etc/timezone
+      - /var/lib/zabbix/localtime:/etc/localtime
+    depends_on:
+      - zabbix-postgres
+    networks:
+      - zabbix-net
+
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-pgsql:alpine-latest
+    environment:
+      DB_SERVER_HOST: zabbix-postgres
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: zabbix
+      ZBX_SERVER_HOST: zabbix-server
+      PHP_TZ: Europe/Moscow
+    ports:
+      - "80:8080"
+      - "443:8443"
+    volumes:
+      - /var/lib/zabbix/timezone:/etc/timezone
+      - /var/lib/zabbix/localtime:/etc/localtime
+    depends_on:
+      - zabbix-server
+    networks:
+      - zabbix-net
+
+networks:
+  app-network:
+    driver: bridge
+  zabbix-net:
+    driver: bridge
+

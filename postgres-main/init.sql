@@ -1,4 +1,5 @@
--- Удаление баз данных если она существует
+\c postgres
+
 DROP DATABASE IF EXISTS repair_shop;
 
 -- Создание базы данных
@@ -578,27 +579,27 @@ INSERT INTO repair_shop.specializations (name) VALUES
 
 -- Вставка данных в таблицу passwords
 INSERT INTO repair_shop.passwords (hashed_password) VALUES
-('password1'),
-('password2'),
-('password3'),
-('password4'),
-('password5'),
-('password6'),
-('password7'),
-('password8'),
-('password9'),
-('password10'),
-('password11'),
-('password12'),
-('password13'),
-('password14'),
-('password15'),
-('password16'),
-('password17'),
-('password18'),
-('password19'),
-('password20'),
-('password21');
+(crypt('password1', gen_salt('bf'))),
+(crypt('password2', gen_salt('bf'))),
+(crypt('password3', gen_salt('bf'))),
+(crypt('password4', gen_salt('bf'))),
+(crypt('password5', gen_salt('bf'))),
+(crypt('password6', gen_salt('bf'))),
+(crypt('password7', gen_salt('bf'))),
+(crypt('password8', gen_salt('bf'))),
+(crypt('password9', gen_salt('bf'))),
+(crypt('password10', gen_salt('bf'))),
+(crypt('password11', gen_salt('bf'))),
+(crypt('password12', gen_salt('bf'))),
+(crypt('password13', gen_salt('bf'))),
+(crypt('password14', gen_salt('bf'))),
+(crypt('password15', gen_salt('bf'))),
+(crypt('password16', gen_salt('bf'))),
+(crypt('password17', gen_salt('bf'))),
+(crypt('password18', gen_salt('bf'))),
+(crypt('password19', gen_salt('bf'))),
+(crypt('password20', gen_salt('bf'))),
+(crypt('password21', gen_salt('bf')));
 
 -- Вставка данных в таблицу employees
 INSERT INTO repair_shop.employees (password_id, role_id, specialization_id, fname, lname, mname, passport_number, login) VALUES

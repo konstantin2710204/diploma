@@ -14,20 +14,41 @@ def get_db():
     finally:
         db.close()
 
-@router.get("/track-order", response_model=List[schemas.Order])
+@router.get("/track-order", response_model=List[schemas.OrderInfo])
 def track_orders(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
-    return crud.get_orders(db=db, skip=skip, limit=limit)
+    orders = crud.get_orders(db=db, skip=skip, limit=limit)
+    return [
+        schemas.OrderInfo(
+            order_id=order.order_id,
+            device_model=order.device.model,
+            status=order.status,
+            client_phone_number=order.client.phone_number,
+            engineer_name=f"{order.engineer.fname} {order.engineer.lname}"
+        )
+        for order in orders
+    ]
 
-@router.get("/track-order/{order_id}", response_model=schemas.Order)
+@router.get("/track-order/{order_id}", response_model=schemas.OrderInfo)
 def track_order(order_id: int, db: Session = Depends(get_db)):
-    db_order = crud.get_order(db=db, order_id=order_id)
-    if db_order is None:
+    order = crud.get_order(db=db, order_id=order_id)
+    if order is None:
         raise HTTPException(status_code=404, detail="Order not found")
-    return db_order
+    return schemas.OrderInfo(
+        order_id=order.order_id,
+        device_model=order.device.model,
+        status=order.status,
+        client_phone_number=order.client.phone_number,
+        engineer_name=f"{order.engineer.fname} {order.engineer.lname}"
+    )
 
-@router.get("/track-order/build/{build_id}", response_model=schemas.ComputerBuild)
+@router.get("/track-order/build/{build_id}", response_model=schemas.ComputerBuildInfo)
 def track_computer_build(build_id: int, db: Session = Depends(get_db)):
-    db_build = crud.get_computer_build(db=db, build_id=build_id)
-    if db_build is None:
+    build = crud.get_computer_build(db=db, build_id=build_id)
+    if build is None:
         raise HTTPException(status_code=404, detail="Computer build not found")
-    return db_build
+    return schemas.ComputerBuildInfo(
+        build_id=build.build_id,
+        status=build.status,
+        client_phone_number=build.client.phone_number,
+        engineer_name=f"{build.engineer.fname} {build.engineer.lname}"
+    )

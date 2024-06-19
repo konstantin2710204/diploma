@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, validator
 from typing import Optional, List
 from datetime import date
 import re
@@ -63,7 +63,7 @@ class CallbackOrderBase(BaseModel):
     model: str = Field(..., max_length=100, description="Модель устройства")
     defect: str = Field(..., max_length=255, description="Описание дефекта")
 
-    @field_validator('phone_number')
+    @validator('phone_number')
     def validate_phone_number(cls, v):
         if not re.match(r'^8[0-9]{10}$', v):
             raise ValueError('Номер телефона должен начинаться с 8 и содержать 11 цифр')
@@ -86,7 +86,7 @@ class CallbackComputerBuildBase(BaseModel):
     usage_tasks: Optional[str] = Field(None, description="Задачи, для которых будет использоваться компьютер")
     build_preferences: Optional[str] = Field(None, description="Предпочтения по сборке")
 
-    @field_validator('phone_number')
+    @validator('phone_number')
     def validate_phone_number(cls, v):
         if not re.match(r'^8[0-9]{10}$', v):
             raise ValueError('Номер телефона должен начинаться с 8 и содержать 11 цифр')
@@ -172,18 +172,23 @@ class Device(DeviceBase):
     class Config:
         orm_mode = True
 
-# Схемы для модели Order
-class OrderBase(BaseModel):
-    defect: Optional[str]
-    status: str
-    cost: Optional[Decimal]
-    creation_date: date
-
-class Order(OrderBase):
+# Новая схема для отображения информации о заказе
+class OrderInfo(BaseModel):
     order_id: int
-    device_id: int
-    client_id: int
-    engineer_id: int
+    device_model: str
+    status: str
+    client_phone_number: str
+    engineer_name: str
+
+    class Config:
+        orm_mode = True
+
+# Новая схема для отображения информации о заказе на сборку компьютера
+class ComputerBuildInfo(BaseModel):
+    build_id: int
+    status: str
+    client_phone_number: str
+    engineer_name: str
 
     class Config:
         orm_mode = True

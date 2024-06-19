@@ -99,19 +99,19 @@ def get_device(db: Session, device_id: int):
 def get_devices(db: Session, skip: int = 0, limit: int = 10):
     return db.query(models.Device).offset(skip).limit(limit).all()
 
-# CRUD операции для модели Order
+# Обновленные CRUD операции для модели Order
 def get_order(db: Session, order_id: int):
-    return db.query(models.Order).filter(models.Order.order_id == order_id).first()
+    return db.query(models.Order).join(models.Device).join(models.Client).join(models.Employee).filter(models.Order.order_id == order_id).first()
 
 def get_orders(db: Session, skip: int = 0, limit: int = 10):
-    return db.query(models.Order).offset(skip).limit(limit).all()
+    return db.query(models.Order).join(models.Device).join(models.Client).join(models.Employee).offset(skip).limit(limit).all()
 
-# CRUD операции для модели ComputerBuild
+# Обновленные CRUD операции для модели ComputerBuild
 def get_computer_build(db: Session, build_id: int):
-    return db.query(models.ComputerBuild).filter(models.ComputerBuild.build_id == build_id).first()
+    return db.query(models.ComputerBuild).join(models.Client).join(models.Employee).filter(models.ComputerBuild.build_id == build_id).first()
 
 def get_computer_builds(db: Session, skip: int = 0, limit: int = 10):
-    return db.query(models.ComputerBuild).offset(skip).limit(limit).all()
+    return db.query(models.ComputerBuild).join(models.Client).join(models.Employee).offset(skip).limit(limit).all()
 
 # CRUD операции для модели ArchivedOrder
 def get_archived_order(db: Session, archived_order_id: int):
